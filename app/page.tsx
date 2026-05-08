@@ -1,8 +1,13 @@
-import Banner from "@/components/hero";
+import Header from "../components/Header";
+import Hero from "../components/Hero";
+import Footer from "../components/Footer";
 
-export default function Home() {
+export default function HomePage() {
   return (
-
-  <Banner/>
+    <>
+      <Header />
+      <Hero />
+      <Footer />
+    </>
   );
 }
