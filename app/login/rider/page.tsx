@@ -57,7 +57,7 @@ export default function RiderLoginPage() {
       setServerError("");
       setServerMessage("");
 
-      const response = await axios.post("http://localhost:3000/rider/login", data);
+      const response = await axios.post("http://localhost:3000/riders/login", data);
       const token = response.data?.token || response.data?.accessToken;
 
       if (token) localStorage.setItem("rider_token", token);
