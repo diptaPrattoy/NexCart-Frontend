@@ -1,8 +1,10 @@
 "use client";
 
+
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +16,6 @@ import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 
 import LoginIcon from "@mui/icons-material/Login";
@@ -28,8 +29,6 @@ const sellerLoginSchema = z.object({
 type SellerLoginData = z.infer<typeof sellerLoginSchema>;
 
 export default function SellerLoginPage() {
-  const [serverError, setServerError] = useState("");
-  const [serverMessage, setServerMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const {
@@ -43,12 +42,10 @@ export default function SellerLoginPage() {
   const onSubmit = async (data: SellerLoginData) => {
     try {
       setLoading(true);
-      setServerError("");
-      setServerMessage("");
 
       const response = await axios.post(
         "http://localhost:3000/seller/login",
-        data,
+        data
       );
 
       const token =
@@ -64,21 +61,23 @@ export default function SellerLoginPage() {
         localStorage.setItem("seller", JSON.stringify(response.data.seller));
       }
 
-      setServerMessage(response.data?.message || "Seller login successful");
+      toast.success(response.data?.message || "Seller login successful");
 
-      // Optional redirect after login
-      // window.location.href = "/seller/dashboard";
+      // Redirect after login
+      // setTimeout(() => {
+      //   window.location.href = "/seller/dashboard";
+      // }, 1000);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
 
         if (Array.isArray(message)) {
-          setServerError(message.join(", "));
+          toast.error(message.join(", "));
         } else {
-          setServerError(message || "Seller login failed");
+          toast.error(message || "Seller login failed");
         }
       } else {
-        setServerError("Something went wrong");
+        toast.error("Something went wrong");
       }
     } finally {
       setLoading(false);
@@ -139,18 +138,6 @@ export default function SellerLoginPage() {
             </Typography>
           </Box>
 
-          {serverMessage && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              {serverMessage}
-            </Alert>
-          )}
-
-          {serverError && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {serverError}
-            </Alert>
-          )}
-
           <Box
             component="form"
             onSubmit={handleSubmit(onSubmit)}
@@ -210,7 +197,7 @@ export default function SellerLoginPage() {
             Do not have a seller account?{" "}
             <Typography
               component={Link}
-              href="/seller/register"
+              href="/register/seller"
               sx={{
                 color: "primary.main",
                 textDecoration: "none",
