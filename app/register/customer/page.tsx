@@ -1,198 +1,235 @@
 "use client";
 
+import axios from "axios";
+import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
+import { toast } from "react-toastify";
 
-// ✅ Fixed Schema
-const customerSchema = z.object({
-  fullName: z
-    .string()
-    .min(3, { message: "Full name must be at least 3 characters long" }),
+const customerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, { message: "Name must be at least 3 characters" }),
 
-  email: z.string().email({ message: "Invalid Email" }),
+    email: z
+      .string()
+      .email({ message: "Invalid email address" }),
 
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters long" }),
+    password: z
+      .string()
+      .min(6, { message: "Password must be at least 6 characters" }),
 
-  address: z
-    .string()
-    .min(5, { message: "Address must be at least 5 characters long" }),
-
-  phone: z
-    .string()
-    .regex(/^\d{11}$/, { message: "Phone number must be 11 digits" }),
-});
-
-export default function RegisterCustomer() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    address: "",
-    phone: "",
+    confirmPassword: z
+      .string()
+      .min(6, { message: "Confirm Password is required" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
-  const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [success, setSuccess] = useState("");
+export default function CustomerRegisterPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const [errors, setErrors] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     const result = customerSchema.safeParse(formData);
 
+    // Zod Validation
     if (!result.success) {
-      const formattedErrors = result.error.flatten().fieldErrors;
-      setErrors(formattedErrors);
-      setSuccess("");
-    } else {
-      setErrors({});
-      setSuccess("Customer Registration Successful 🎉");
+      setErrors(result.error.flatten().fieldErrors);
 
-      // reset form
+      toast.error("Please fix the form errors");
+
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Backend API Call
+      const res = await axios.post(
+        "http://localhost:3000/customer/register",
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      console.log(res.data);
+
+      // Success Toast
+      toast.success(
+        "Customer Registration Successful 🎉"
+      );
+
+      setErrors({});
+
+      // Reset Form
       setFormData({
-        fullName: "",
+        name: "",
         email: "",
         password: "",
-        address: "",
-        phone: "",
+        confirmPassword: "",
       });
+
+    } catch (error: any) {
+      console.log(error);
+
+      // Error Toast
+      toast.error(
+        error.response?.data?.message ||
+          "Registration Failed"
+      );
+
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center bg-gradient-to-br from-white via-blue-200 to-white p-6 min-h-screen">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-green-100 to-white px-4">
 
-      <div className="bg-white/30 shadow-2xl backdrop-blur-xl p-8 border border-white/40 rounded-3xl w-full max-w-md">
+      <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl p-8">
 
-        <h2 className="mb-4 font-extrabold text-green-900 text-xl text-center">
-          🛒 Customer Registration
-        </h2>
+        {/* Title */}
+        <h1 className="text-4xl font-bold text-center text-green-600 mb-2">
+          Customer Register
+        </h1>
 
-        {/* ✅ Success Message */}
-        {success && (
-          <p className="mb-4 font-semibold text-green-700 text-center">
-            {success}
-          </p>
-        )}
+        <p className="text-center text-gray-500 mb-8">
+          Create your customer account
+        </p>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Name */}
           <div>
-            <label className="block mb-1 font-semibold text-green-900">
-              Name:
+            <label className="block mb-2 font-medium">
+              Name
             </label>
+
             <input
-              value={formData.fullName}
+              type="text"
+              placeholder="Enter your name"
+              value={formData.name}
               onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
+                setFormData({
+                  ...formData,
+                  name: e.target.value,
+                })
               }
-              className="bg-white p-3 border rounded-lg w-full"
-              placeholder="Enter your full name"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400"
             />
-            <p className="text-red-500 text-sm">
-              {errors?.fullName?.[0]}
+
+            <p className="text-red-500 text-sm mt-1">
+              {errors?.name?.[0]}
             </p>
           </div>
 
           {/* Email */}
           <div>
-            <label className="block mb-1 font-semibold text-green-900">
-              Email:
+            <label className="block mb-2 font-medium">
+              Email
             </label>
+
             <input
+              type="email"
+              placeholder="example@gmail.com"
               value={formData.email}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData({
+                  ...formData,
+                  email: e.target.value,
+                })
               }
-              className="bg-white p-3 border rounded-lg w-full"
-              placeholder="example@gmail.com"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400"
             />
-            <p className="text-red-500 text-sm">
+
+            <p className="text-red-500 text-sm mt-1">
               {errors?.email?.[0]}
             </p>
           </div>
 
           {/* Password */}
           <div>
-            <label className="block mb-1 font-semibold text-green-900">
-              Password:
+            <label className="block mb-2 font-medium">
+              Password
             </label>
 
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="bg-white p-3 border rounded-lg w-full"
-                placeholder="Enter password"
-              />
+            <input
+              type="password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  password: e.target.value,
+                })
+              }
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400"
+            />
 
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="top-2 right-2 absolute bg-gray-700 px-2 py-1 rounded text-white text-sm"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-
-            <p className="text-red-500 text-sm">
+            <p className="text-red-500 text-sm mt-1">
               {errors?.password?.[0]}
             </p>
           </div>
 
-          {/* Address */}
+          {/* Confirm Password */}
           <div>
-            <label className="block mb-1 font-semibold text-green-900">
-              Address:
+            <label className="block mb-2 font-medium">
+              Confirm Password
             </label>
-            <input
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-              className="bg-white p-3 border rounded-lg w-full"
-              placeholder="Delivery address"
-            />
-            <p className="text-red-500 text-sm">
-              {errors?.address?.[0]}
-            </p>
-          </div>
 
-          {/* Phone */}
-          <div>
-            <label className="block mb-1 font-semibold text-green-900">
-              Phone:
-            </label>
             <input
-              value={formData.phone}
+              type="password"
+              placeholder="Confirm password"
+              value={formData.confirmPassword}
               onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
+                setFormData({
+                  ...formData,
+                  confirmPassword: e.target.value,
+                })
               }
-              className="bg-white p-3 border rounded-lg w-full"
-              placeholder="01XXXXXXXXX"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-green-400"
             />
-            <p className="text-red-500 text-sm">
-              {errors?.phone?.[0]}
+
+            <p className="text-red-500 text-sm mt-1">
+              {errors?.confirmPassword?.[0]}
             </p>
           </div>
 
           {/* Button */}
           <button
             type="submit"
-            className="bg-green-600 hover:bg-green-700 shadow-lg py-3 rounded-xl w-full font-bold text-white"
+            disabled={loading}
+            className="w-full bg-green-500 hover:bg-green-600 transition text-white py-3 rounded-xl font-semibold shadow-lg"
           >
-            Register Customer
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
-        <p className="mt-5 text-green-900 text-sm text-center">
-          🛍️ Online Grocery System
+        {/* Login Link */}
+        <p className="text-center text-sm mt-6">
+          Already have an account?{" "}
+          <Link
+            href="/login/customer"
+            className="text-blue-500 hover:underline"
+          >
+            Login
+          </Link>
         </p>
       </div>
     </div>
