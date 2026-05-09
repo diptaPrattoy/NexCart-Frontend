@@ -1,10 +1,9 @@
-"use client"; 
+"use client";
 
-
+import { toast } from "react-toastify";
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { toast } from "react-toastify";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,66 +16,84 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
+import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 
-import LoginIcon from "@mui/icons-material/Login";
+const riderRegisterSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Name must be at least 3 characters")
+    .max(100, "Name cannot be more than 100 characters"),
 
-const sellerLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
 
-  password: z.string().min(1, "Password is required"),
+  phone: z
+    .string()
+    .min(11, "Phone number must be 11 digits")
+    .max(20, "Phone number cannot be more than 20 characters")
+    .regex(/^01[0-9]{9}$/, "Enter a valid Bangladeshi phone number"),
+
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(255, "Password cannot be more than 255 characters"),
 });
 
-type SellerLoginData = z.infer<typeof sellerLoginSchema>;
+type RiderRegisterData = z.infer<typeof riderRegisterSchema>;
 
-export default function SellerLoginPage() {
+export default function RiderRegisterPage() {
   const [loading, setLoading] = useState(false);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
-  } = useForm<SellerLoginData>({
-    resolver: zodResolver(sellerLoginSchema),
+  } = useForm<RiderRegisterData>({
+    resolver: zodResolver(riderRegisterSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+    },
   });
 
-  const onSubmit = async (data: SellerLoginData) => {
+  const onSubmit = async (data: RiderRegisterData) => {
     try {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:3000/seller/login",
+        "http://localhost:3000/riders/createRider",
         data
       );
 
-      const token =
-        response.data?.access_token ||
-        response.data?.accessToken ||
-        response.data?.token;
+      toast.success(
+        response.data?.message || "Rider registered successfully"
+      );
 
-      if (token) {
-        localStorage.setItem("seller_token", token);
-      }
-
-      if (response.data?.seller) {
-        localStorage.setItem("seller", JSON.stringify(response.data.seller));
-      }
-
-      toast.success(response.data?.message || "Seller login successful");
-
-      // Redirect after login
-      // setTimeout(() => {
-      //   window.location.href = "/seller/dashboard";
-      // }, 1000);
+      reset();
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
+        console.log("Backend Error:", error.response?.data);
+
         const message = error.response?.data?.message;
 
+        // Backend sends array
         if (Array.isArray(message)) {
-          toast.error(message.join(", "));
-        } else {
-          toast.error(message || "Seller login failed");
+          message.forEach((msg) => toast.error(msg));
+        }
+
+        // Backend sends string
+        else if (typeof message === "string") {
+          toast.error(message);
+        }
+
+        // Fallback
+        else {
+          toast.error("Rider registration failed");
         }
       } else {
+        console.log(error);
         toast.error("Something went wrong");
       }
     } finally {
@@ -107,19 +124,19 @@ export default function SellerLoginPage() {
           <Box sx={{ textAlign: "center", mb: 4 }}>
             <Box
               sx={{
-                width: 64,
-                height: 64,
+                width: 62,
+                height: 62,
                 mx: "auto",
                 mb: 2,
                 borderRadius: 4,
-                bgcolor: "primary.main",
+                bgcolor: "secondary.main",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <LoginIcon fontSize="large" />
+              <DirectionsBikeIcon fontSize="large" />
             </Box>
 
             <Typography
@@ -130,11 +147,11 @@ export default function SellerLoginPage() {
                 letterSpacing: "-0.8px",
               }}
             >
-              Seller Login
+              Rider Registration
             </Typography>
 
             <Typography sx={{ mt: 1, color: "text.secondary" }}>
-              Access your NexCart seller account
+              Join the NexCart delivery team
             </Typography>
           </Box>
 
@@ -149,17 +166,42 @@ export default function SellerLoginPage() {
             }}
           >
             <TextField
-              label="Email"
-              placeholder="Enter your email"
+              label="Full Name"
+              placeholder="Enter your name"
               fullWidth
-              {...register("email")}
-              error={Boolean(errors.email)}
-              helperText={errors.email?.message}
+              {...register("name")}
+              error={Boolean(errors.name)}
+              helperText={errors.name?.message}
             />
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
+              }}
+            >
+              <TextField
+                label="Email"
+                placeholder="Email address"
+                fullWidth
+                {...register("email")}
+                error={Boolean(errors.email)}
+                helperText={errors.email?.message}
+              />
+
+              <TextField
+                label="Phone Number"
+                placeholder="017XXXXXXXX"
+                fullWidth
+                {...register("phone")}
+                error={Boolean(errors.phone)}
+                helperText={errors.phone?.message}
+              />
+            </Box>
 
             <TextField
               label="Password"
-              placeholder="Enter your password"
               type="password"
               fullWidth
               {...register("password")}
@@ -170,9 +212,9 @@ export default function SellerLoginPage() {
             <Button
               type="submit"
               variant="contained"
+              color="secondary"
               disabled={loading}
               sx={{
-                mt: 1,
                 py: 1.6,
                 fontSize: 16,
                 fontWeight: 800,
@@ -181,7 +223,7 @@ export default function SellerLoginPage() {
               {loading ? (
                 <CircularProgress size={24} sx={{ color: "white" }} />
               ) : (
-                "Login"
+                "Register as Rider"
               )}
             </Button>
           </Box>
@@ -194,18 +236,17 @@ export default function SellerLoginPage() {
               fontSize: 14,
             }}
           >
-            Do not have a seller account?{" "}
-            <Typography
-              component={Link}
-              href="/register/seller"
-              sx={{
-                color: "primary.main",
+            Already have a rider account?{" "}
+            <Link
+              href="/login/rider"
+              style={{
+                color: "#9c27b0",
                 textDecoration: "none",
                 fontWeight: 800,
               }}
             >
-              Register
-            </Typography>
+              Login
+            </Link>
           </Typography>
         </Paper>
       </Container>
