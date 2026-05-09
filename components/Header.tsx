@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
+
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
@@ -8,15 +11,47 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
+
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 
 export default function Header() {
+
+  // Mounted State
+  const [mounted, setMounted] = useState(false);
+
+  // Token State
+  const [token, setToken] = useState<
+    string | undefined
+  >();
+
+  useEffect(() => {
+    setMounted(true);
+
+    const savedToken = Cookies.get("token");
+
+    setToken(savedToken);
+  }, []);
+
+  // Prevent Hydration Error
+  if (!mounted) return null;
+
   const navItems = [
     { label: "Home", href: "/" },
     { label: "Products", href: "/products" },
     { label: "Sellers", href: "/sellers" },
     { label: "About", href: "/about" },
   ];
+
+  // Logout Function
+  const handleLogout = () => {
+    Cookies.remove("token");
+    Cookies.remove("role");
+
+    setToken(undefined);
+
+    // Full Reload
+    window.location.href = "/login";
+  };
 
   return (
     <AppBar
@@ -37,6 +72,7 @@ export default function Header() {
             justifyContent: "space-between",
           }}
         >
+          {/* Logo */}
           <Box
             component={Link}
             href="/"
@@ -74,6 +110,7 @@ export default function Header() {
             </Typography>
           </Box>
 
+          {/* Nav Items */}
           <Stack
             direction="row"
             spacing={4}
@@ -93,6 +130,7 @@ export default function Header() {
                   fontSize: 15,
                   fontWeight: 600,
                   transition: "0.2s",
+
                   "&:hover": {
                     color: "primary.main",
                   },
@@ -103,27 +141,49 @@ export default function Header() {
             ))}
           </Stack>
 
+          {/* Auth Buttons */}
           <Stack direction="row" spacing={1.5}>
-            <Button
-              component={Link}
-              href="/login"
-              variant="outlined"
-              sx={{
-                borderColor: "#d1d5db",
-                color: "text.primary",
-                "&:hover": {
-                  borderColor: "primary.main",
-                  color: "primary.main",
-                  bgcolor: "white",
-                },
-              }}
-            >
-              Login
-            </Button>
 
-            <Button component={Link} href="/register" variant="contained">
-              Register
-            </Button>
+            {!token ? (
+              <>
+                {/* Login */}
+                <Button
+                  component={Link}
+                  href="/login"
+                  variant="outlined"
+                  sx={{
+                    borderColor: "#d1d5db",
+                    color: "text.primary",
+
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                      bgcolor: "white",
+                    },
+                  }}
+                >
+                  Login
+                </Button>
+
+                {/* Register */}
+                <Button
+                  component={Link}
+                  href="/register"
+                  variant="contained"
+                >
+                  Register
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            )}
+
           </Stack>
         </Toolbar>
       </Container>

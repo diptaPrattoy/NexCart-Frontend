@@ -4,7 +4,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -14,11 +15,23 @@ const loginSchema = z.object({
 
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
+    .min(6, {
+      message: "Password must be at least 6 characters",
+    }),
 });
 
 export default function CustomerLoginPage() {
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
+
+    if (token && role) {
+      window.location.href = `/dashboard/${role}`;
+    }
+  }, []);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -28,14 +41,21 @@ export default function CustomerLoginPage() {
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
 
+    // Zod Validation
     const result = loginSchema.safeParse(formData);
 
-    // Zod Validation
     if (!result.success) {
-      setErrors(result.error.flatten().fieldErrors);
+      setErrors(
+        result.error.flatten().fieldErrors
+      );
+
+      toast.error("Please fix the form errors");
+
       return;
     }
 
@@ -54,20 +74,23 @@ export default function CustomerLoginPage() {
       console.log(res.data);
 
       // Save JWT Token
-      Cookies.set("token", res.data.accessToken);
+      Cookies.set("token", res.data.token);
 
       // Save Role
       Cookies.set("role", "customer");
 
-      alert("Login Successful 🎉");
+      // Success Toast
+      toast.success("Login Successful 🎉");
 
-      // Redirect Dashboard
-      router.push("/dashboard/customer");
+      // Full Reload Redirect
+      window.location.href =
+        "/dashboard/customer";
 
     } catch (error: any) {
       console.log(error);
 
-      alert(
+      // Error Toast
+      toast.error(
         error.response?.data?.message ||
           "Login Failed"
       );
@@ -92,7 +115,10 @@ export default function CustomerLoginPage() {
         </p>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
 
           {/* Email */}
           <div>
@@ -142,17 +168,19 @@ export default function CustomerLoginPage() {
             </p>
           </div>
 
-          {/* Button */}
+          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-blue-500 hover:bg-blue-600 transition text-white py-3 rounded-xl font-semibold shadow-lg"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading
+              ? "Logging in..."
+              : "Login"}
           </button>
         </form>
 
-        {/* Register */}
+        {/* Register Link */}
         <p className="text-center text-sm mt-6">
           Don&apos;t have an account?{" "}
           <Link
