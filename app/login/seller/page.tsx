@@ -46,7 +46,7 @@ export default function SellerLoginPage() {
 
       const response = await axios.post(
         "http://localhost:3000/seller/login",
-        data
+        data,
       );
 
       const token =
