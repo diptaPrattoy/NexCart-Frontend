@@ -1,9 +1,11 @@
-"use client"; 
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
+
+import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,60 +21,78 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 import LoginIcon from "@mui/icons-material/Login";
 
-const sellerLoginSchema = z.object({
+const riderLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
-
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
-type SellerLoginData = z.infer<typeof sellerLoginSchema>;
+type RiderLoginData = z.infer<typeof riderLoginSchema>;
 
-export default function SellerLoginPage() {
+export default function RiderLoginPage() {
+  const router = useRouter();
+
   const [loading, setLoading] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SellerLoginData>({
-    resolver: zodResolver(sellerLoginSchema),
+  } = useForm<RiderLoginData>({
+    resolver: zodResolver(riderLoginSchema),
   });
 
-  const onSubmit = async (data: SellerLoginData) => {
+  const onSubmit = async (data: RiderLoginData) => {
     try {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:3000/seller/login",
-        data,
+        "http://localhost:3000/riders/login",
+        data
       );
 
+      console.log(response.data);
+
+      // Get Token
       const token =
         response.data?.access_token ||
         response.data?.accessToken ||
         response.data?.token;
 
+      // Save Token
       if (token) {
-        localStorage.setItem("seller_token", token);
+        localStorage.setItem("token", token);
       }
 
-      if (response.data?.seller) {
-        localStorage.setItem("seller", JSON.stringify(response.data.seller));
+      // Save Rider Data
+      if (response.data?.rider) {
+        localStorage.setItem(
+          "rider",
+          JSON.stringify(response.data.rider)
+        );
+
+        localStorage.setItem(
+          "riderId",
+          response.data.rider.id.toString()
+        );
       }
 
-      toast.success(response.data?.message || "Seller login successful");
+      toast.success(
+        response.data?.message || "Login successful"
+      );
 
-      setTimeout(() => {
-        window.location.href = "/seller/dashboard";
-      }, 1000);
+      // Redirect Dashboard
+      router.push("/dashboard/rider");
+
     } catch (error: unknown) {
+      console.log(error);
+
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
 
         if (Array.isArray(message)) {
           toast.error(message.join(", "));
         } else {
-          toast.error(message || "Seller login failed");
+          toast.error(message || "Login failed");
         }
       } else {
         toast.error("Something went wrong");
@@ -102,6 +122,7 @@ export default function SellerLoginPage() {
             boxShadow: "0 25px 70px rgba(15, 23, 42, 0.1)",
           }}
         >
+          {/* Header */}
           <Box sx={{ textAlign: "center", mb: 4 }}>
             <Box
               sx={{
@@ -110,7 +131,7 @@ export default function SellerLoginPage() {
                 mx: "auto",
                 mb: 2,
                 borderRadius: 4,
-                bgcolor: "primary.main",
+                bgcolor: "secondary.main",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
@@ -128,14 +149,20 @@ export default function SellerLoginPage() {
                 letterSpacing: "-0.8px",
               }}
             >
-              Seller Login
+              Rider Login
             </Typography>
 
-            <Typography sx={{ mt: 1, color: "text.secondary" }}>
-              Access your NexCart seller account
+            <Typography
+              sx={{
+                mt: 1,
+                color: "text.secondary",
+              }}
+            >
+              Access your rider dashboard
             </Typography>
           </Box>
 
+          {/* Form */}
           <Box
             component="form"
             onSubmit={handleSubmit(onSubmit)}
@@ -174,16 +201,25 @@ export default function SellerLoginPage() {
                 py: 1.6,
                 fontSize: 16,
                 fontWeight: 800,
+                bgcolor: "secondary.main",
+
+                "&:hover": {
+                  bgcolor: "secondary.dark",
+                },
               }}
             >
               {loading ? (
-                <CircularProgress size={24} sx={{ color: "white" }} />
+                <CircularProgress
+                  size={24}
+                  sx={{ color: "white" }}
+                />
               ) : (
                 "Login"
               )}
             </Button>
           </Box>
 
+          {/* Footer */}
           <Typography
             sx={{
               mt: 3,
@@ -192,12 +228,12 @@ export default function SellerLoginPage() {
               fontSize: 14,
             }}
           >
-            Do not have a seller account?{" "}
+            Don’t have a rider account?{" "}
             <Typography
               component={Link}
-              href="/register/seller"
+              href="/rider/register"
               sx={{
-                color: "primary.main",
+                color: "secondary.main",
                 textDecoration: "none",
                 fontWeight: 800,
               }}
