@@ -3,45 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { toast } from "react-toastify";
+
+import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  InputAdornment,
-  IconButton,
-  Divider,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 
-// Icons
-import DeliveryDiningIcon from "@mui/icons-material/DeliveryDining";
-import EmailTwoToneIcon from "@mui/icons-material/EmailTwoTone";
-import LockTwoToneIcon from "@mui/icons-material/LockTwoTone";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import LoginIcon from "@mui/icons-material/Login";
 
 const riderLoginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
 type RiderLoginData = z.infer<typeof riderLoginSchema>;
 
 export default function RiderLoginPage() {
-  const [serverError, setServerError] = useState("");
-  const [serverMessage, setServerMessage] = useState("");
+  const router = useRouter();
+
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -54,22 +44,58 @@ export default function RiderLoginPage() {
   const onSubmit = async (data: RiderLoginData) => {
     try {
       setLoading(true);
-      setServerError("");
-      setServerMessage("");
 
-      const response = await axios.post("http://localhost:3000/riders/login", data);
-      const token = response.data?.token || response.data?.accessToken;
+      const response = await axios.post(
+        "http://localhost:3000/riders/login",
+        data
+      );
 
-      if (token) localStorage.setItem("rider_token", token);
-      if (response.data?.rider) localStorage.setItem("rider", JSON.stringify(response.data.rider));
+      console.log(response.data);
 
-      setServerMessage(response.data?.message || "Success! Redirecting...");
+      // Get Token
+      const token =
+        response.data?.access_token ||
+        response.data?.accessToken ||
+        response.data?.token;
+
+      // Save Token
+      if (token) {
+        localStorage.setItem("token", token);
+      }
+
+      // Save Rider Data
+      if (response.data?.rider) {
+        localStorage.setItem(
+          "rider",
+          JSON.stringify(response.data.rider)
+        );
+
+        localStorage.setItem(
+          "riderId",
+          response.data.rider.id.toString()
+        );
+      }
+
+      toast.success(
+        response.data?.message || "Login successful"
+      );
+
+      // Redirect Dashboard
+      router.push("/dashboard/rider");
+
     } catch (error: unknown) {
+      console.log(error);
+
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
-        setServerError(Array.isArray(message) ? message.join(", ") : message || "Login failed");
+
+        if (Array.isArray(message)) {
+          toast.error(message.join(", "));
+        } else {
+          toast.error(message || "Login failed");
+        }
       } else {
-        setServerError("Connection error. Please check your internet.");
+        toast.error("Something went wrong");
       }
     } finally {
       setLoading(false);
@@ -80,64 +106,63 @@ export default function RiderLoginPage() {
     <Box
       sx={{
         minHeight: "100vh",
+        bgcolor: "#f3f4f6",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", // Deep professional background
-        position: "relative",
-        overflow: "hidden",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          background: "rgba(56, 189, 248, 0.1)",
-          top: "-100px",
-          right: "-100px",
-        },
+        py: 6,
       }}
     >
-      <Container maxWidth="xs">
+      <Container maxWidth="sm">
         <Paper
-          elevation={24}
+          elevation={0}
           sx={{
-            p: 5,
-            borderRadius: 7,
-            bgcolor: "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(10px)",
-            textAlign: "center",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            p: { xs: 3, sm: 5 },
+            borderRadius: 5,
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 25px 70px rgba(15, 23, 42, 0.1)",
           }}
         >
-          {/* Logo Section */}
-          <Box
-            sx={{
-              display: "inline-flex",
-              p: 2,
-              borderRadius: 5,
-              background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-              color: "white",
-              mb: 3,
-              boxShadow: "0 10px 20px rgba(2, 132, 199, 0.3)",
-            }}
-          >
-            <DeliveryDiningIcon sx={{ fontSize: 48 }} />
+          {/* Header */}
+          <Box sx={{ textAlign: "center", mb: 4 }}>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                mx: "auto",
+                mb: 2,
+                borderRadius: 4,
+                bgcolor: "secondary.main",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <LoginIcon fontSize="large" />
+            </Box>
+
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 900,
+                color: "text.primary",
+                letterSpacing: "-0.8px",
+              }}
+            >
+              Rider Login
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 1,
+                color: "text.secondary",
+              }}
+            >
+              Access your rider dashboard
+            </Typography>
           </Box>
 
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: "-0.5px" }}
-          >
-            Rider Login
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", mt: 1, mb: 4 }}>
-            Welcome back! Please enter your details.
-          </Typography>
-
-          {serverMessage && <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>{serverMessage}</Alert>}
-          {serverError && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{serverError}</Alert>}
-
+          {/* Form */}
           <Box
             component="form"
             onSubmit={handleSubmit(onSubmit)}
@@ -150,107 +175,70 @@ export default function RiderLoginPage() {
           >
             <TextField
               label="Email"
-              variant="filled"
+              placeholder="Enter your email"
               fullWidth
               {...register("email")}
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
-              InputProps={{
-                disableUnderline: true,
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailTwoToneIcon sx={{ color: "#0284c7" }} />
-                  </InputAdornment>
-                ),
-                sx: { borderRadius: 3, bgcolor: "#f8fafc" },
-              }}
             />
 
             <TextField
               label="Password"
-              type={showPassword ? "text" : "password"}
-              variant="filled"
+              placeholder="Enter your password"
+              type="password"
               fullWidth
               {...register("password")}
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
-              InputProps={{
-                disableUnderline: true,
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockTwoToneIcon sx={{ color: "#0284c7" }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                sx: { borderRadius: 3, bgcolor: "#f8fafc" },
-              }}
             />
-
-            <Box sx={{ textAlign: "right" }}>
-              <Typography
-                component={Link}
-                href="/rider/forgot-password"
-                sx={{
-                  fontSize: "0.85rem",
-                  color: "#0284c7",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                Forgot Password?
-              </Typography>
-            </Box>
 
             <Button
               type="submit"
               variant="contained"
               disabled={loading}
-              endIcon={!loading && <ArrowForwardIcon />}
               sx={{
-                py: 1.8,
-                borderRadius: 3,
+                mt: 1,
+                py: 1.6,
                 fontSize: 16,
-                fontWeight: 700,
-                textTransform: "none",
-                background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-                transition: "transform 0.2s",
+                fontWeight: 800,
+                bgcolor: "secondary.main",
+
                 "&:hover": {
-                  transform: "translateY(-2px)",
-                  background: "#000",
+                  bgcolor: "secondary.dark",
                 },
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+              {loading ? (
+                <CircularProgress
+                  size={24}
+                  sx={{ color: "white" }}
+                />
+              ) : (
+                "Login"
+              )}
             </Button>
           </Box>
 
-          <Divider sx={{ my: 4 }}>
-            <Typography variant="caption" sx={{ color: "#cbd5e1", px: 1 }}>
-              OR
-            </Typography>
-          </Divider>
-
-          <Typography variant="body2" sx={{ color: "#64748b" }}>
-            Don't have an account?{" "}
+          {/* Footer */}
+          <Typography
+            sx={{
+              mt: 3,
+              textAlign: "center",
+              color: "text.secondary",
+              fontSize: 14,
+            }}
+          >
+            Don’t have a rider account?{" "}
             <Typography
               component={Link}
               href="/rider/register"
               sx={{
-                color: "#0284c7",
+                color: "secondary.main",
                 textDecoration: "none",
-                fontWeight: 700,
-                ml: 0.5,
-                "&:hover": { color: "#0369a1" },
+                fontWeight: 800,
               }}
             >
-              Join the Fleet
+              Register
             </Typography>
           </Typography>
         </Paper>
