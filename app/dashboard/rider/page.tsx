@@ -1,329 +1,156 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
+import Cookies from "js-cookie";
+import { useEffect } from "react";
 
-export default function RiderDashboard() {
-  const [rider, setRider] = useState<any>(null);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [status, setStatus] = useState("");
+const RiderDashboard = () => {
 
-  const [token, setToken] = useState<string | null>(null);
-  const [riderId, setRiderId] = useState<string | null>(null);
-
-  const [loading, setLoading] = useState(true);
-
-  // Fetch Rider Information
-  const fetchRider = async (
-    token: string,
-    riderId: string
-  ) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:3000/riders/${riderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setRider(res.data);
-      setStatus(res.data.status);
-
-    } catch (error: any) {
-      console.log(error);
-
-      // Unauthorized
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("riderId");
-        localStorage.removeItem("rider");
-
-        window.location.href = "/login/rider";
-      }
-    }
-  };
-
-  // Fetch Reviews
-  const fetchReviews = async (
-    token: string,
-    riderId: string
-  ) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:3000/riders/${riderId}/reviews`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setReviews(res.data);
-
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // Load Data
+  // AUTH CHECK
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedRiderId = localStorage.getItem("riderId");
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
 
-    // If not logged in
-    if (!storedToken || !storedRiderId) {
+    // Redirect if not rider
+    if (!token || role !== "rider") {
       window.location.href = "/login/rider";
-      return;
     }
-
-    setToken(storedToken);
-    setRiderId(storedRiderId);
-
-    const loadData = async () => {
-      await fetchRider(storedToken, storedRiderId);
-      await fetchReviews(storedToken, storedRiderId);
-
-      setLoading(false);
-    };
-
-    loadData();
-
   }, []);
 
-  // Change Rider Status
-  const changeStatus = async () => {
-    try {
-      if (!token || !riderId) return;
-
-      await axios.patch(
-        `http://localhost:3000/riders/${riderId}/status`,
-        {
-          status,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      alert("Status Updated Successfully");
-
-      fetchRider(token, riderId);
-
-    } catch (error) {
-      console.log(error);
-
-      alert("Failed to update status");
-    }
-  };
-
-  // Logout
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("riderId");
-    localStorage.removeItem("rider");
-
-    window.location.href = "/login/rider";
-  };
-
-  // Loading State
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center text-2xl font-bold">
-        Loading Dashboard...
-      </div>
-    );
-  }
-
-  // No Rider
-  if (!rider) {
-    return (
-      <div className="h-screen flex items-center justify-center text-red-500 text-2xl font-bold">
-        Rider Not Found
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-[#f8fafc] p-8">
 
-      <div className="max-w-6xl mx-auto">
+      <h1 className="text-4xl font-bold text-slate-900 mb-3">
+        Rider Dashboard
+      </h1>
 
-        {/* Header */}
-        <div className="bg-white shadow-md rounded-2xl p-6 flex justify-between items-center">
+      <p className="text-slate-500 mb-10">
+        Welcome back Rider 👋
+      </p>
 
-          <div>
-            <h1 className="text-3xl font-bold">
-              Welcome, {rider.name}
-            </h1>
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <p className="text-gray-500 mt-1">
-              {rider.email}
-            </p>
-          </div>
-
-          <button
-            onClick={logout}
-            className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg"
-          >
-            Logout
-          </button>
-
-        </div>
-
-        {/* Dashboard Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-
-          {/* Rider Profile */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-
-            <h2 className="text-2xl font-bold mb-5">
-              Rider Profile
-            </h2>
-
-            <div className="space-y-3">
-
-              <p>
-                <strong>Name:</strong> {rider.name}
-              </p>
-
-              <p>
-                <strong>Email:</strong> {rider.email}
-              </p>
-
-              <p>
-                <strong>Phone:</strong> {rider.phone}
-              </p>
-
-              <p>
-                <strong>Vehicle:</strong>{" "}
-                {rider.vehicle_type || "N/A"}
-              </p>
-
-              <p>
-                <strong>Location:</strong>{" "}
-                {rider.current_location || "N/A"}
-              </p>
-
-              <p>
-                <strong>Status:</strong>{" "}
-                <span className="text-blue-600 font-bold capitalize">
-                  {rider.status}
-                </span>
-              </p>
-
-            </div>
-
-          </div>
-
-          {/* Change Status */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-
-            <h2 className="text-2xl font-bold mb-5">
-              Change Status
-            </h2>
-
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-            >
-              <option value="available">
-                Available
-              </option>
-
-              <option value="busy">
-                Busy
-              </option>
-
-              <option value="offline">
-                Offline
-              </option>
-            </select>
-
-            <button
-              onClick={changeStatus}
-              className="bg-blue-500 hover:bg-blue-600 text-white w-full mt-5 py-3 rounded-lg"
-            >
-              Update Status
-            </button>
-
-          </div>
-
-          {/* Stats */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-
-            <h2 className="text-2xl font-bold mb-5">
-              Dashboard Stats
-            </h2>
-
-            <div className="space-y-4">
-
-              <div className="bg-green-100 p-4 rounded-lg">
-                <p className="font-semibold">
-                  Total Reviews
-                </p>
-
-                <p className="text-2xl font-bold">
-                  {reviews.length}
-                </p>
-              </div>
-
-              <div className="bg-yellow-100 p-4 rounded-lg">
-                <p className="font-semibold">
-                  Current Status
-                </p>
-
-                <p className="text-2xl font-bold capitalize">
-                  {rider.status}
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* Reviews Section */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mt-6">
-
-          <h2 className="text-2xl font-bold mb-6">
-            Rider Reviews
+        <div className="bg-white rounded-3xl shadow-md p-6">
+          <h2 className="text-slate-500 text-lg">
+            Total Deliveries
           </h2>
 
-          {reviews.length === 0 ? (
-            <div className="text-gray-500">
-              No reviews yet.
-            </div>
-          ) : (
-            <div className="space-y-4">
-
-              {reviews.map((review: any) => (
-                <div
-                  key={review.id}
-                  className="border rounded-xl p-4"
-                >
-                  <p className="font-bold text-lg">
-                    ⭐ Rating: {review.rating}
-                  </p>
-
-                  <p className="text-gray-700 mt-2">
-                    {review.comment}
-                  </p>
-                </div>
-              ))}
-
-            </div>
-          )}
-
+          <h1 className="text-4xl font-bold text-slate-900 mt-3">
+            120
+          </h1>
         </div>
 
+        <div className="bg-white rounded-3xl shadow-md p-6">
+          <h2 className="text-slate-500 text-lg">
+            Pending Orders
+          </h2>
+
+          <h1 className="text-4xl font-bold text-yellow-500 mt-3">
+            8
+          </h1>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-md p-6">
+          <h2 className="text-slate-500 text-lg">
+            Completed Orders
+          </h2>
+
+          <h1 className="text-4xl font-bold text-green-500 mt-3">
+            112
+          </h1>
+        </div>
+
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-white rounded-3xl shadow-md p-6 mt-10">
+
+        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+          Assigned Orders
+        </h2>
+
+        <div className="overflow-x-auto">
+
+          <table className="w-full">
+
+            <thead>
+              <tr className="border-b text-left">
+
+                <th className="pb-4 text-slate-500">
+                  Order ID
+                </th>
+
+                <th className="pb-4 text-slate-500">
+                  Customer
+                </th>
+
+                <th className="pb-4 text-slate-500">
+                  Status
+                </th>
+
+                <th className="pb-4 text-slate-500">
+                  Date
+                </th>
+
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <tr className="border-b">
+
+                <td className="py-5 font-medium">
+                  #1001
+                </td>
+
+                <td className="py-5">
+                  Hridoy
+                </td>
+
+                <td className="py-5">
+
+                  <span className="px-4 py-1 rounded-full text-sm bg-yellow-100 text-yellow-600">
+                    Pending
+                  </span>
+
+                </td>
+
+                <td className="py-5 text-slate-500">
+                  10 May 2026
+                </td>
+              </tr>
+
+              <tr>
+
+                <td className="py-5 font-medium">
+                  #1002
+                </td>
+
+                <td className="py-5">
+                  Alex
+                </td>
+
+                <td className="py-5">
+
+                  <span className="px-4 py-1 rounded-full text-sm bg-green-100 text-green-600">
+                    Delivered
+                  </span>
+
+                </td>
+
+                <td className="py-5 text-slate-500">
+                  11 May 2026
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+        </div>
       </div>
 
     </div>
   );
-}
+};
+
+export default RiderDashboard;
