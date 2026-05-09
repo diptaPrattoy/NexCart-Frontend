@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import Cookies from "js-cookie";
+import { useEffect } from "react";
 
 const roles = [
   {
     title: "Customer",
-    description: "Browse products, manage orders, and track purchases.",
+    description:
+      "Browse products, manage orders, and track purchases.",
     href: "/login/customer",
     color: "from-blue-500 to-blue-600",
     bg: "bg-blue-50",
@@ -12,7 +17,8 @@ const roles = [
   },
   {
     title: "Seller",
-    description: "Manage products, orders, and your online shop.",
+    description:
+      "Manage products, orders, and your online shop.",
     href: "/login/seller",
     color: "from-green-500 to-green-600",
     bg: "bg-green-50",
@@ -21,7 +27,8 @@ const roles = [
   },
   {
     title: "Rider",
-    description: "View assigned deliveries and update delivery status.",
+    description:
+      "View assigned deliveries and update delivery status.",
     href: "/login/rider",
     color: "from-yellow-500 to-yellow-600",
     bg: "bg-yellow-50",
@@ -30,7 +37,8 @@ const roles = [
   },
   {
     title: "Admin",
-    description: "Control users, products, orders, and platform settings.",
+    description:
+      "Control users, products, orders, and platform settings.",
     href: "/login/admin",
     color: "from-red-500 to-red-600",
     bg: "bg-red-50",
@@ -40,10 +48,23 @@ const roles = [
 ];
 
 export default function LoginPage() {
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
+
+    // Redirect if already logged in
+    if (token && role) {
+      window.location.href = `/dashboard/${role}`;
+    }
+  }, []);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 px-6 py-12">
       <section className="mx-auto flex min-h-[80vh] max-w-6xl items-center justify-center">
         <div className="w-full rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-2xl backdrop-blur-md md:p-10">
+
+          {/* Header */}
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <span className="mb-4 inline-flex rounded-full bg-slate-900 px-4 py-1 text-sm font-medium text-white">
               NexCart Login
@@ -58,6 +79,7 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Role Cards */}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {roles.map((role) => (
               <Link
@@ -88,9 +110,11 @@ export default function LoginPage() {
             ))}
           </div>
 
+          {/* Footer */}
           <div className="mt-10 text-center text-sm text-slate-500">
             New to NexCart? Choose your role and register from the login page.
           </div>
+
         </div>
       </section>
     </main>
