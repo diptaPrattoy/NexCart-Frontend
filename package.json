@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 4000",
-    "build": "next build",
-    "start": "next start --port 4000",
+    "dev": "node init && next dev --port 4000",
+    "build": "node init && next build",
+    "start": "node init && next start --port 4000",
     "lint": "eslint"
   },
   "dependencies": {
@@ -16,7 +16,6 @@
     "@mui/material": "^9.0.1",
     "@mui/material-nextjs": "^9.0.1",
     "axios": "^1.16.0",
-
     "js-cookie": "^3.0.5",
     "next": "16.2.4",
     "postcss": "^8.5.14",
