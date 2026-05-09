@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import Cookies from "js-cookie";
 
 // ZOD SCHEMA
 const adminLoginSchema = z.object({
@@ -48,16 +49,27 @@ export default function AdminLoginPage() {
       setLoading(true);
       setServerError("");
 
-      // STEP 5: Axios API call
+      // Axios API call
       const response = await axios.post(
         "http://localhost:3000/admin/login",
         data,
       );
 
-      // STEP 7: Store JWT token
-      localStorage.setItem("token", response.data.access_token);
+      // Store token in cookie
+      Cookies.set("token", response.data.access_token, {
+        expires: 1 / 24, // 1 hour
+        sameSite: "strict",
+      });
 
-      // STEP 8: Redirect
+      // Store role
+      Cookies.set("role", "admin", {
+        expires: 1 / 24,
+        sameSite: "strict",
+      });
+
+          toast.success("Login successful!");
+
+      // Redirect
       router.push("/admin/dashboard");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Login failed");
@@ -65,6 +77,15 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
+
+    if (token && role === "admin") {
+      router.push("/dashboard/admin");
+    }
+  }, []);
 
   return (
     <>

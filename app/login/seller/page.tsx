@@ -1,10 +1,10 @@
-"use client"; 
-
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,12 +23,13 @@ import LoginIcon from "@mui/icons-material/Login";
 const sellerLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
 
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SellerLoginData = z.infer<typeof sellerLoginSchema>;
 
 export default function SellerLoginPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const {
@@ -45,7 +46,7 @@ export default function SellerLoginPage() {
 
       const response = await axios.post(
         "http://localhost:3000/seller/login",
-        data
+        data,
       );
 
       const token =
@@ -57,16 +58,27 @@ export default function SellerLoginPage() {
         localStorage.setItem("seller_token", token);
       }
 
+      /**
+       * Use this if your backend returns:
+       * { seller: {...} }
+       */
       if (response.data?.seller) {
         localStorage.setItem("seller", JSON.stringify(response.data.seller));
       }
 
+      /**
+       * Use this if your backend returns:
+       * { data: {...} }
+       */
+      if (response.data?.data) {
+        localStorage.setItem("seller", JSON.stringify(response.data.data));
+      }
+
       toast.success(response.data?.message || "Seller login successful");
 
-      // Redirect after login
-      // setTimeout(() => {
-      //   window.location.href = "/seller/dashboard";
-      // }, 1000);
+      setTimeout(() => {
+        router.push("/dashboard/seller");
+      }, 1000);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
@@ -99,7 +111,7 @@ export default function SellerLoginPage() {
           elevation={0}
           sx={{
             p: { xs: 3, sm: 5 },
-            borderRadius: 5,
+            borderRadius: 2,
             border: "1px solid #e5e7eb",
             boxShadow: "0 25px 70px rgba(15, 23, 42, 0.1)",
           }}
@@ -111,7 +123,7 @@ export default function SellerLoginPage() {
                 height: 64,
                 mx: "auto",
                 mb: 2,
-                borderRadius: 4,
+                borderRadius: 2,
                 bgcolor: "primary.main",
                 color: "white",
                 display: "flex",
@@ -140,7 +152,10 @@ export default function SellerLoginPage() {
 
           <Box
             component="form"
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSubmit(onSubmit)(event);
+            }}
             noValidate
             sx={{
               display: "flex",
