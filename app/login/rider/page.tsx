@@ -1,248 +1,201 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import axios from "axios";
+import Cookies from "js-cookie";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-
-import { useRouter } from "next/navigation";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Container from "@mui/material/Container";
-import Paper from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
+const loginSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Invalid email address" }),
 
-import LoginIcon from "@mui/icons-material/Login";
-
-const riderLoginSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z
+    .string()
+    .min(6, {
+      message: "Password must be at least 6 characters",
+    }),
 });
 
-type RiderLoginData = z.infer<typeof riderLoginSchema>;
-
 export default function RiderLoginPage() {
-  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RiderLoginData>({
-    resolver: zodResolver(riderLoginSchema),
+    if (token && role) {
+      window.location.href = `/dashboard/${role}`;
+    }
+  }, []);
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
   });
 
-  const onSubmit = async (data: RiderLoginData) => {
+  const [errors, setErrors] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
+    e.preventDefault();
+
+    const result = loginSchema.safeParse(formData);
+
+    if (!result.success) {
+      setErrors(
+        result.error.flatten().fieldErrors
+      );
+
+      toast.error("Please fix the form errors");
+
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const response = await axios.post(
+      const res = await axios.post(
         "http://localhost:3000/riders/login",
-        data
+        {
+          email: formData.email,
+          password: formData.password,
+        }
       );
 
-      console.log(response.data);
+      console.log(res.data);
 
-      // Get Token
-      const token =
-        response.data?.access_token ||
-        response.data?.accessToken ||
-        response.data?.token;
-
-      // Save Token
-      if (token) {
-        localStorage.setItem("token", token);
-      }
-
-      // Save Rider Data
-      if (response.data?.rider) {
-        localStorage.setItem(
-          "rider",
-          JSON.stringify(response.data.rider)
-        );
-
-        localStorage.setItem(
-          "riderId",
-          response.data.rider.id.toString()
-        );
-      }
-
-      toast.success(
-        response.data?.message || "Login successful"
+      // SAVE TOKEN
+      Cookies.set(
+        "token",
+        res.data.access_token
       );
 
-      // Redirect Dashboard
-      router.push("/dashboard/rider");
+      // SAVE ROLE
+      Cookies.set("role", "rider");
 
-    } catch (error: unknown) {
+      toast.success("Login Successful 🎉");
+
+      // REDIRECT
+      window.location.href =
+        "/dashboard/rider";
+
+    } catch (error: any) {
       console.log(error);
 
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message;
+      toast.error(
+        error.response?.data?.message ||
+          "Login Failed"
+      );
 
-        if (Array.isArray(message)) {
-          toast.error(message.join(", "));
-        } else {
-          toast.error(message || "Login failed");
-        }
-      } else {
-        toast.error("Something went wrong");
-      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#f3f4f6",
-        display: "flex",
-        alignItems: "center",
-        py: 6,
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 3, sm: 5 },
-            borderRadius: 5,
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 25px 70px rgba(15, 23, 42, 0.1)",
-          }}
+    <div className="min-h-screen bg-[#e5e5e5] flex items-center justify-center px-4 py-6">
+
+      <div className="w-full max-w-xl bg-[#f4f4f4] rounded-[40px] shadow-xl px-8 py-10 md:px-10">
+
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-[#08132b] flex items-center justify-center text-white text-3xl">
+            ↪
+          </div>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-3xl font-extrabold text-center text-[#08132b] mb-2">
+          Rider Login
+        </h1>
+
+        <p className="text-center text-gray-500 text-base mb-8">
+          Access your rider dashboard
+        </p>
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
         >
-          {/* Header */}
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                mx: "auto",
-                mb: 2,
-                borderRadius: 4,
-                bgcolor: "secondary.main",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <LoginIcon fontSize="large" />
-            </Box>
 
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 900,
-                color: "text.primary",
-                letterSpacing: "-0.8px",
-              }}
-            >
-              Rider Login
-            </Typography>
+          {/* Email */}
+          <div>
+            <label className="block text-gray-500 mb-2 text-sm">
+              Email
+            </label>
 
-            <Typography
-              sx={{
-                mt: 1,
-                color: "text.secondary",
-              }}
-            >
-              Access your rider dashboard
-            </Typography>
-          </Box>
-
-          {/* Form */}
-          <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2.5,
-            }}
-          >
-            <TextField
-              label="Email"
+            <input
+              type="email"
               placeholder="Enter your email"
-              fullWidth
-              {...register("email")}
-              error={Boolean(errors.email)}
-              helperText={errors.email?.message}
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  email: e.target.value,
+                })
+              }
+              className="w-full bg-[#dfe5f1] border border-gray-300 rounded-[18px] px-5 py-3 text-lg outline-none"
             />
 
-            <TextField
-              label="Password"
-              placeholder="Enter your password"
+            <p className="text-red-500 text-sm mt-2">
+              {errors?.email?.[0]}
+            </p>
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-gray-500 mb-2 text-sm">
+              Password
+            </label>
+
+            <input
               type="password"
-              fullWidth
-              {...register("password")}
-              error={Boolean(errors.password)}
-              helperText={errors.password?.message}
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  password: e.target.value,
+                })
+              }
+              className="w-full bg-[#dfe5f1] border border-gray-300 rounded-[18px] px-5 py-3 text-lg outline-none"
             />
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                mt: 1,
-                py: 1.6,
-                fontSize: 16,
-                fontWeight: 800,
-                bgcolor: "secondary.main",
+            <p className="text-red-500 text-sm mt-2">
+              {errors?.password?.[0]}
+            </p>
+          </div>
 
-                "&:hover": {
-                  bgcolor: "secondary.dark",
-                },
-              }}
-            >
-              {loading ? (
-                <CircularProgress
-                  size={24}
-                  sx={{ color: "white" }}
-                />
-              ) : (
-                "Login"
-              )}
-            </Button>
-          </Box>
-
-          {/* Footer */}
-          <Typography
-            sx={{
-              mt: 3,
-              textAlign: "center",
-              color: "text.secondary",
-              fontSize: 14,
-            }}
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#08132b] hover:bg-[#0d1c3f] transition text-white py-3 rounded-[18px] text-xl font-bold mt-4"
           >
-            Don’t have a rider account?{" "}
-            <Typography
-              component={Link}
-              href="/rider/register"
-              sx={{
-                color: "secondary.main",
-                textDecoration: "none",
-                fontWeight: 800,
-              }}
-            >
-              Register
-            </Typography>
-          </Typography>
-        </Paper>
-      </Container>
-    </Box>
+            {loading
+              ? "Logging in..."
+              : "Login"}
+          </button>
+        </form>
+
+        {/* Register */}
+        <p className="text-center text-gray-500 text-sm mt-8">
+          Don&apos;t have a rider account?{" "}
+          <Link
+            href="/register/rider"
+            className="font-bold text-[#08132b]"
+          >
+            Register
+          </Link>
+        </p>
+
+      </div>
+    </div>
   );
 }
