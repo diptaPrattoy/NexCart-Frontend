@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
@@ -23,7 +22,7 @@ import LoginIcon from "@mui/icons-material/Login";
 const sellerLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
 
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SellerLoginData = z.infer<typeof sellerLoginSchema>;
@@ -45,7 +44,7 @@ export default function SellerLoginPage() {
 
       const response = await axios.post(
         "http://localhost:3000/seller/login",
-        data
+        data,
       );
 
       const token =
@@ -63,10 +62,9 @@ export default function SellerLoginPage() {
 
       toast.success(response.data?.message || "Seller login successful");
 
-      // Redirect after login
-      // setTimeout(() => {
-      //   window.location.href = "/seller/dashboard";
-      // }, 1000);
+      setTimeout(() => {
+        window.location.href = "/seller/dashboard";
+      }, 1000);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;

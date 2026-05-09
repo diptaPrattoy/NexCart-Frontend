@@ -2,13 +2,14 @@ import Link from "next/link";
 
 const roles = [
   {
-    title: "Customer",
-    href: "/register/customer",
-    icon: "🛒",
-    border: "border-blue-200",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
+    title: "Admin",
+    href: "/register/admin",
+    icon: "🛡️",
+    border: "border-red-200",
+    bg: "bg-red-50",
+    text: "text-red-700",
   },
+
   {
     title: "Seller",
     href: "/register/seller",
@@ -26,12 +27,12 @@ const roles = [
     text: "text-yellow-700",
   },
   {
-    title: "Admin",
-    href: "/register/admin",
-    icon: "🛡️",
-    border: "border-red-200",
-    bg: "bg-red-50",
-    text: "text-red-700",
+    title: "Customer",
+    href: "/register/customer",
+    icon: "🛒",
+    border: "border-blue-200",
+    bg: "bg-blue-50",
+    text: "text-blue-700",
   },
 ];
 
@@ -48,11 +49,6 @@ export default function RegisterPage() {
           <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-slate-900 md:text-5xl">
             Start your journey with the right account type.
           </h1>
-
-          <p className="mt-5 max-w-lg text-base leading-7 text-slate-600 md:text-lg">
-            Choose a role to create your account and continue with the dashboard
-            designed for your activity.
-          </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

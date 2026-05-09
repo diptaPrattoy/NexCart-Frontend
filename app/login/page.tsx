@@ -2,13 +2,13 @@ import Link from "next/link";
 
 const roles = [
   {
-    title: "Customer",
-    description: "Browse products, manage orders, and track purchases.",
-    href: "/login/customer",
-    color: "from-blue-500 to-blue-600",
-    bg: "bg-blue-50",
-    text: "text-blue-600",
-    icon: "🛒",
+    title: "Admin",
+    description: "Control users, products, orders, and platform settings.",
+    href: "/login/admin",
+    color: "from-red-500 to-red-600",
+    bg: "bg-red-50",
+    text: "text-red-600",
+    icon: "🛡️",
   },
   {
     title: "Seller",
@@ -29,13 +29,13 @@ const roles = [
     icon: "🏍️",
   },
   {
-    title: "Admin",
-    description: "Control users, products, orders, and platform settings.",
-    href: "/login/admin",
-    color: "from-red-500 to-red-600",
-    bg: "bg-red-50",
-    text: "text-red-600",
-    icon: "🛡️",
+    title: "Customer",
+    description: "Browse products, manage orders, and track purchases.",
+    href: "/login/customer",
+    color: "from-blue-500 to-blue-600",
+    bg: "bg-blue-50",
+    text: "text-blue-600",
+    icon: "🛒",
   },
 ];
 
@@ -52,10 +52,6 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
               Select Your Login Role
             </h1>
-
-            <p className="mt-3 text-sm leading-6 text-slate-600 md:text-base">
-              Choose the correct role to continue to your personalized dashboard.
-            </p>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
