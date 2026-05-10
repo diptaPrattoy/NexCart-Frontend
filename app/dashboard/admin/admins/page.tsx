@@ -3,10 +3,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { Loader2, Search, TrendingUp } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Trash2,
+  Shield,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
-interface AdminProfile {
+interface Admin {
   id: number;
   name: string;
   email: string;
@@ -15,74 +22,33 @@ interface AdminProfile {
   createdAt: string;
 }
 
-const statCards = [
-  {
-    label: "Total Orders",
-    value: "1,248",
-    change: "+18% this week",
-    color: "bg-[#4a7c59]",
-  },
-  {
-    label: "Total Sellers",
-    value: "320",
-    change: "Verified shops",
-    color: "bg-[#6b8f71]",
-  },
-  {
-    label: "Active Riders",
-    value: "85",
-    change: "Active today",
-    color: "bg-[#8fad7c]",
-  },
-  {
-    label: "Revenue",
-    value: "৳2.4M",
-    change: "Monthly sales",
-    color: "bg-[#b5c99a]",
-  },
-];
-
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${Cookies.get("token")}` },
 });
 
-export default function AdminDashboardPage() {
-  const [profile, setProfile] = useState<AdminProfile | null>(null);
-  const [allAdmins, setAllAdmins] = useState<AdminProfile[]>([]);
+export default function AdminsPage() {
+  const [admins, setAdmins] = useState<Admin[]>([]);
   const [searchName, setSearchName] = useState("");
-  const [searchResults, setSearchResults] = useState<AdminProfile[]>([]);
-  const [loadingAdmins, setLoadingAdmins] = useState(true);
+  const [searchResults, setSearchResults] = useState<Admin[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const fetchProfile = async () => {
+  const fetchAdmins = async () => {
     try {
-      const token = Cookies.get("token");
-      if (!token) return;
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const res = await axios.get(
-        `http://localhost:3000/admin/${payload.sub}`,
-        authHeader(),
-      );
-      setProfile(res.data);
-    } catch {}
-  };
-
-  const fetchAllAdmins = async () => {
-    try {
-      setLoadingAdmins(true);
+      setLoading(true);
       const res = await axios.get("http://localhost:3000/admin", authHeader());
-      setAllAdmins(res.data);
+      setAdmins(res.data);
     } catch {
       toast.error("Failed to load admins");
     } finally {
-      setLoadingAdmins(false);
+      setLoading(false);
     }
-  };
-
+    };
   
+    
   useEffect(() => {
-    fetchProfile();
-    fetchAllAdmins();
+    fetchAdmins();
   }, []);
 
   const handleSearch = async () => {
@@ -104,62 +70,71 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const displayAdmins = searchResults.length > 0 ? searchResults : allAdmins;
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this admin?")) return;
+    try {
+      setDeletingId(id);
+      await axios.delete(`http://localhost:3000/admin/${id}`, authHeader());
+      toast.success("Admin deleted");
+      setAdmins((prev) => prev.filter((a) => a.id !== id));
+      setSearchResults((prev) => prev.filter((a) => a.id !== id));
+    } catch {
+      toast.error("Failed to delete admin");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const displayAdmins = searchResults.length > 0 ? searchResults : admins;
+  const verified = admins.filter((a) => a.isVerified).length;
+  const active = admins.filter((a) => a.isActive).length;
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black text-[#1a1f16]">
-            Admin Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[#7a8a6a]">
-            Welcome back,{" "}
-            <span className="font-semibold text-[#4a7c59]">
-              {profile?.name ?? "..."}
-            </span>
-          </p>
-        </div>
-
-        {/* Profile badge */}
-        <div className="flex items-center gap-3 rounded-2xl border border-[#e0d9cc] bg-white px-5 py-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4a7c59] text-sm font-bold text-white">
-            {profile?.name?.charAt(0).toUpperCase() ?? "A"}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[#1a1f16]">
-              {profile?.name ?? "Loading..."}
-            </p>
-            <p className="text-xs text-[#7a8a6a]">{profile?.email ?? ""}</p>
-          </div>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-[#1a1f16]">Admins</h1>
+        <p className="mt-1 text-sm text-[#7a8a6a]">Manage all admin accounts</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {statCards.map((card) => (
+      {/* Stat row */}
+      <div className="mb-8 grid grid-cols-3 gap-5">
+        {[
+          {
+            label: "Total Admins",
+            value: admins.length,
+            icon: Shield,
+            color: "bg-[#4a7c59]",
+          },
+          {
+            label: "Verified",
+            value: verified,
+            icon: UserCheck,
+            color: "bg-green-500",
+          },
+          {
+            label: "Unverified",
+            value: admins.length - verified,
+            icon: UserX,
+            color: "bg-red-400",
+          },
+        ].map(({ label, value, icon: Icon, color }) => (
           <div
-            key={card.label}
+            key={label}
             className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm"
           >
             <div
-              className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}
+              className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}
             >
-              <TrendingUp size={18} className="text-white" />
+              <Icon size={18} className="text-white" />
             </div>
-            <p className="text-sm text-[#7a8a6a]">{card.label}</p>
-            <p className="mt-1 text-3xl font-black text-[#1a1f16]">
-              {card.value}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-[#4a7c59]">
-              {card.change}
-            </p>
+            <p className="text-sm text-[#7a8a6a]">{label}</p>
+            <p className="mt-1 text-3xl font-black text-[#1a1f16]">{value}</p>
           </div>
         ))}
       </div>
 
-      {/* Admin table */}
+      {/* Table */}
       <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-black text-[#1a1f16]">All Admins</h2>
@@ -190,8 +165,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {loadingAdmins ? (
-          <div className="flex items-center justify-center py-12">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
             <Loader2 size={28} className="animate-spin text-[#4a7c59]" />
           </div>
         ) : (
@@ -199,16 +174,22 @@ export default function AdminDashboardPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#e0d9cc] text-left">
-                  {["ID", "Name", "Email", "Verified", "Status", "Joined"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "ID",
+                    "Name",
+                    "Email",
+                    "Verified",
+                    "Status",
+                    "Joined",
+                    "Action",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -220,6 +201,9 @@ export default function AdminDashboardPage() {
                     <td className="py-4 text-sm text-[#7a8a6a]">#{admin.id}</td>
                     <td className="py-4">
                       <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d4e6c3] text-sm font-bold text-[#4a7c59]">
+                          {admin.name.charAt(0).toUpperCase()}
+                        </div>
                         <span className="text-sm font-semibold text-[#1a1f16]">
                           {admin.name}
                         </span>
@@ -249,12 +233,26 @@ export default function AdminDashboardPage() {
                         year: "numeric",
                       })}
                     </td>
+                    <td className="py-4">
+                      <button
+                        onClick={() => handleDelete(admin.id)}
+                        disabled={deletingId === admin.id}
+                        className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-50"
+                      >
+                        {deletingId === admin.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={12} />
+                        )}
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {displayAdmins.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-sm text-[#7a8a6a]"
                     >
                       No admins found

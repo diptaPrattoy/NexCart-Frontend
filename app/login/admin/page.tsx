@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
           toast.success("Login successful!");
 
       // Redirect
-      router.push("/admin/dashboard");
+      router.push("/dashboard/admin");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Login failed");
     } finally {
