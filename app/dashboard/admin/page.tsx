@@ -3,59 +3,70 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { Loader2, Search, TrendingUp } from "lucide-react";
+import {
+  Loader2,
+  TrendingUp,
+  ShoppingBag,
+  Bike,
+  Package,
+  Mail,
+  User,
+  Lock,
+  Save,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 interface AdminProfile {
   id: number;
   name: string;
   email: string;
   isActive: boolean;
   isVerified: boolean;
+  isApproved: boolean;
   createdAt: string;
 }
 
-const statCards = [
-  {
-    label: "Total Orders",
-    value: "1,248",
-    change: "+18% this week",
-    color: "bg-[#4a7c59]",
-  },
-  {
-    label: "Total Sellers",
-    value: "320",
-    change: "Verified shops",
-    color: "bg-[#6b8f71]",
-  },
-  {
-    label: "Active Riders",
-    value: "85",
-    change: "Active today",
-    color: "bg-[#8fad7c]",
-  },
-  {
-    label: "Revenue",
-    value: "৳2.4M",
-    change: "Monthly sales",
-    color: "bg-[#b5c99a]",
-  },
-];
+interface DashboardStats {
+  totalOrders: number;
+  totalSellers: number;
+  activeRiders: number;
+  totalRevenue: number;
+}
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${Cookies.get("token")}` },
 });
 
+// ─────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────
 export default function AdminDashboardPage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
-  const [allAdmins, setAllAdmins] = useState<AdminProfile[]>([]);
-  const [searchName, setSearchName] = useState("");
-  const [searchResults, setSearchResults] = useState<AdminProfile[]>([]);
-  const [loadingAdmins, setLoadingAdmins] = useState(true);
-  const [searching, setSearching] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalOrders: 0,
+    totalSellers: 0,
+    activeRiders: 0,
+    totalRevenue: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
+  // Edit profile state
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // ── Fetch profile ──
   const fetchProfile = async () => {
     try {
+      setLoadingProfile(true);
       const token = Cookies.get("token");
       if (!token) return;
       const payload = JSON.parse(atob(token.split(".")[1]));
@@ -64,76 +75,165 @@ export default function AdminDashboardPage() {
         authHeader(),
       );
       setProfile(res.data);
-    } catch {}
-  };
-
-  const fetchAllAdmins = async () => {
-    try {
-      setLoadingAdmins(true);
-      const res = await axios.get("http://localhost:3000/admin", authHeader());
-      setAllAdmins(res.data);
+      setEditName(res.data.name ?? "");
+      setEditEmail(res.data.email ?? "");
     } catch {
-      toast.error("Failed to load admins");
+      toast.error("Failed to load profile");
     } finally {
-      setLoadingAdmins(false);
+      setLoadingProfile(false);
     }
   };
 
-  
+  // ── Fetch dashboard stats from real backend ──
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+
+      // Fetch in parallel
+      const [ordersRes, sellersRes, ridersRes] = await Promise.allSettled([
+        axios.get(
+          "http://localhost:3000/customer/orders-details",
+          authHeader(),
+        ),
+        axios.get("http://localhost:3000/seller", authHeader()),
+        axios.get("http://localhost:3000/riders/available"),
+      ]);
+
+      // Total orders
+      const orders =
+        ordersRes.status === "fulfilled"
+          ? Array.isArray(ordersRes.value.data)
+            ? ordersRes.value.data
+            : []
+          : [];
+
+      // Total sellers
+      const sellers =
+        sellersRes.status === "fulfilled"
+          ? Array.isArray(sellersRes.value.data?.data)
+            ? sellersRes.value.data.data
+            : []
+          : [];
+
+      // Available riders
+      const riders =
+        ridersRes.status === "fulfilled"
+          ? Array.isArray(ridersRes.value.data)
+            ? ridersRes.value.data
+            : []
+          : [];
+
+      // Revenue — sum price × quantity of delivered orders
+      const revenue = orders
+        .filter((o: any) => o.status === "delivered")
+        .reduce((total: number, order: any) => {
+          const orderTotal = (order.orderItems ?? []).reduce(
+            (sum: number, item: any) =>
+              sum + (item.product?.price ?? 0) * (item.quantity ?? 1),
+            0,
+          );
+          return total + orderTotal;
+        }, 0);
+
+      setStats({
+        totalOrders: orders.length,
+        totalSellers: sellers.length,
+        activeRiders: riders.length,
+        totalRevenue: revenue,
+      });
+    } catch {
+      toast.error("Failed to load stats");
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
-    fetchAllAdmins();
+    fetchStats();
   }, []);
 
-  const handleSearch = async () => {
-    if (!searchName.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  // ── Update own profile (PATCH) ──
+  const handleUpdateProfile = async () => {
+    if (!profile) return;
     try {
-      setSearching(true);
-      const res = await axios.get(
-        `http://localhost:3000/admin/search?name=${searchName}`,
+      setSaving(true);
+
+      const updateData: any = {};
+      if (editName.trim() && editName !== profile.name) {
+        updateData.name = editName.trim();
+      }
+      if (editEmail.trim() && editEmail !== profile.email) {
+        updateData.email = editEmail.trim();
+      }
+      if (editPassword.trim()) {
+        updateData.password = editPassword.trim();
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast.error("No changes to save");
+        return;
+      }
+
+      await axios.patch(
+        `http://localhost:3000/admin/${profile.id}`,
+        updateData,
         authHeader(),
       );
-      setSearchResults(res.data);
-    } catch {
-      toast.error("Search failed");
+
+      toast.success("Profile updated successfully!");
+      setEditPassword("");
+      fetchProfile();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update profile");
     } finally {
-      setSearching(false);
+      setSaving(false);
     }
   };
 
-  const displayAdmins = searchResults.length > 0 ? searchResults : allAdmins;
+  // ── Stat card config ──
+  const statCards = [
+    {
+      label: "Total Orders",
+      value: stats.totalOrders,
+      change: "All time",
+      icon: Package,
+      color: "bg-green-700",
+    },
+    {
+      label: "Total Sellers",
+      value: stats.totalSellers,
+      change: "Registered",
+      icon: ShoppingBag,
+      color: "bg-blue-500",
+    },
+    {
+      label: "Available Riders",
+      value: stats.activeRiders,
+      change: "Ready now",
+      icon: Bike,
+      color: "bg-orange-500",
+    },
+    {
+      label: "Revenue",
+      value: `৳${stats.totalRevenue.toLocaleString()}`,
+      change: "From delivered orders",
+      icon: TrendingUp,
+      color: "bg-purple-500",
+    },
+  ];
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black text-[#1a1f16]">
-            Admin Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[#7a8a6a]">
-            Welcome back,{" "}
-            <span className="font-semibold text-[#4a7c59]">
-              {profile?.name ?? "..."}
-            </span>
-          </p>
-        </div>
-
-        {/* Profile badge */}
-        <div className="flex items-center gap-3 rounded-2xl border border-[#e0d9cc] bg-white px-5 py-3 shadow-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4a7c59] text-sm font-bold text-white">
-            {profile?.name?.charAt(0).toUpperCase() ?? "A"}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[#1a1f16]">
-              {profile?.name ?? "Loading..."}
-            </p>
-            <p className="text-xs text-[#7a8a6a]">{profile?.email ?? ""}</p>
-          </div>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-[#1a1f16]">Dashboard</h1>
+        <p className="mt-1 text-sm text-[#7a8a6a]">
+          Welcome back,{" "}
+          <span className="font-semibold text-[#4a7c59]">
+            {profile?.name ?? "..."}
+          </span>
+        </p>
       </div>
 
       {/* Stat cards */}
@@ -146,12 +246,16 @@ export default function AdminDashboardPage() {
             <div
               className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}
             >
-              <TrendingUp size={18} className="text-white" />
+              <card.icon size={18} className="text-white" />
             </div>
             <p className="text-sm text-[#7a8a6a]">{card.label}</p>
-            <p className="mt-1 text-3xl font-black text-[#1a1f16]">
-              {card.value}
-            </p>
+            {loadingStats ? (
+              <Loader2 size={20} className="mt-2 animate-spin text-[#4a7c59]" />
+            ) : (
+              <p className="mt-1 text-3xl font-black text-[#1a1f16]">
+                {card.value}
+              </p>
+            )}
             <p className="mt-1 text-xs font-semibold text-[#4a7c59]">
               {card.change}
             </p>
@@ -159,112 +263,213 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Admin table */}
-      <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="text-xl font-black text-[#1a1f16]">All Admins</h2>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Search by name..."
-              value={searchName}
-              onChange={(e) => {
-                setSearchName(e.target.value);
-                if (!e.target.value) setSearchResults([]);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] px-4 py-2.5 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
-            />
-            <button
-              onClick={handleSearch}
-              disabled={searching}
-              className="flex items-center gap-2 rounded-xl bg-[#4a7c59] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3d6b4a] disabled:opacity-60"
-            >
-              {searching ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Search size={15} />
-              )}
-              Search
-            </button>
-          </div>
+      {/* Profile + Edit section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* ── My Profile card ── */}
+        <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-xl font-black text-[#1a1f16]">My Profile</h2>
+
+          {loadingProfile ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={24} className="animate-spin text-[#4a7c59]" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Avatar */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#4a7c59] text-2xl font-black text-white">
+                  {profile?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-lg font-black text-[#1a1f16]">
+                    {profile?.name}
+                  </p>
+                  <p className="text-sm text-[#7a8a6a]">{profile?.email}</p>
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    {/* Email verified via OTP */}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold
+                        ${profile?.isVerified
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-600"
+                        }`}
+                    >
+                      {profile?.isVerified ? "✓ Verified" : "✗ Unverified"}
+                    </span>
+
+                    {/* Approved by another admin */}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold
+                          ${profile?.isApproved
+                          ? "bg-[#d4e6c3] text-[#4a7c59]"
+                          : "bg-amber-100 text-amber-700"
+                        }`}
+                    >
+                      {profile?.isApproved
+                        ? "✓ Approved"
+                        : "⏳ Pending Approval"}
+                    </span>
+
+                    {/* Account active status */}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold
+                        ${profile?.isActive
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-500"
+                        }`}
+                    >
+                      {profile?.isActive ? "● Active" : "● Inactive"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-[#f0ebe0] pt-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 rounded-xl bg-[#faf8f3] px-4 py-3">
+                    <User size={15} className="text-[#7a8a6a]" />
+                    <div>
+                      <p className="text-xs text-[#7a8a6a]">Full Name</p>
+                      <p className="text-sm font-semibold text-[#1a1f16]">
+                        {profile?.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl bg-[#faf8f3] px-4 py-3">
+                    <Mail size={15} className="text-[#7a8a6a]" />
+                    <div>
+                      <p className="text-xs text-[#7a8a6a]">Email</p>
+                      <p className="text-sm font-semibold text-[#1a1f16]">
+                        {profile?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl bg-[#faf8f3] px-4 py-3">
+                    <Package size={15} className="text-[#7a8a6a]" />
+                    <div>
+                      <p className="text-xs text-[#7a8a6a]">Member Since</p>
+                      <p className="text-sm font-semibold text-[#1a1f16]">
+                        {profile?.createdAt
+                          ? new Date(profile.createdAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {loadingAdmins ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 size={28} className="animate-spin text-[#4a7c59]" />
+        {/* ── Edit Profile card ── */}
+        <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
+          <h2 className="mb-2 text-xl font-black text-[#1a1f16]">
+            Update Profile
+          </h2>
+          <p className="mb-6 text-xs text-[#7a8a6a]">
+            You can update your own name, email and password.
+          </p>
+
+          <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">
+                Full Name
+              </label>
+              <div className="relative">
+                <User
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a]"
+                />
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-3 pl-9 pr-4 text-sm text-[#1a1f16] outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a]"
+                />
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder={profile?.email ?? "Enter email"}
+                  className="w-full rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-3 pl-9 pr-4 text-sm text-[#1a1f16] outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+                />
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">
+                New Password{" "}
+                <span className="normal-case text-[#b5c99a]">
+                  (leave blank to keep current)
+                </span>
+              </label>
+              <div className="relative">
+                <Lock
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a]"
+                />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-3 pl-9 pr-10 text-sm text-[#1a1f16] outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] transition hover:text-[#1a1f16]"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={handleUpdateProfile}
+              disabled={saving}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4a7c59] py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#3d6b4a] active:scale-[0.98] disabled:opacity-60"
+            >
+              {saving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              {saving ? "Saving…" : "Save Changes"}
+            </button>
+
+            {/* No delete warning */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-xs text-amber-700">
+                ⚠ Self-deactivation is not allowed. At least one active admin
+                must exist at all times to keep the system operational.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#e0d9cc] text-left">
-                  {["ID", "Name", "Email", "Verified", "Status", "Joined"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {displayAdmins.map((admin) => (
-                  <tr
-                    key={admin.id}
-                    className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]"
-                  >
-                    <td className="py-4 text-sm text-[#7a8a6a]">#{admin.id}</td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-[#1a1f16]">
-                          {admin.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">
-                      {admin.email}
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isVerified ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
-                      >
-                        {admin.isVerified ? "Verified" : "Pending"}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}
-                      >
-                        {admin.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">
-                      {new Date(admin.createdAt).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))}
-                {displayAdmins.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-12 text-center text-sm text-[#7a8a6a]"
-                    >
-                      No admins found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

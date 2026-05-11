@@ -11,6 +11,7 @@ import {
   Bike,
   Shield,
   ChevronRight,
+  Package,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -18,6 +19,7 @@ const navLinks = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard/admin" },
   { label: "Admins", icon: Shield, href: "/dashboard/admin/admins" },
   { label: "Sellers", icon: ShoppingBag, href: "/dashboard/admin/sellers" },
+  { label: "Orders", icon: Package, href: "/dashboard/admin/orders" },
   { label: "Riders", icon: Bike, href: "/dashboard/admin/riders" },
   { label: "Customers", icon: Users, href: "/dashboard/admin/customers" },
 ];

@@ -11,8 +11,10 @@ interface Rider {
   name: string;
   email: string;
   phone?: string;
-  isAvailable?: boolean;
-  isActive?: boolean;
+  status: "available" | "busy" | "offline";
+  vehicle_type?: string;
+  current_location?: string;
+  profileImage?: string | null;
   createdAt: string;
 }
 
@@ -25,6 +27,7 @@ export default function RidersPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchName, setSearchName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchRiders = async () => {
     try {
@@ -33,7 +36,10 @@ export default function RidersPage() {
         "http://localhost:3000/riders/all-riders",
         authHeader(),
       );
-      setRiders(res.data);
+      const data = Array.isArray(res.data) ? res.data : [];
+
+      const sorted = data.sort((a: Rider, b: Rider) => a.id - b.id);
+      setRiders(sorted);
     } catch {
       toast.error("Failed to load riders");
     } finally {
@@ -41,7 +47,6 @@ export default function RidersPage() {
     }
     };
   
-    
   useEffect(() => {
     fetchRiders();
   }, []);
@@ -60,14 +65,22 @@ export default function RidersPage() {
     }
   };
 
-  const filtered = riders.filter(
-    (r) =>
-      r.name?.toLowerCase().includes(searchName.toLowerCase()) ||
-      r.email?.toLowerCase().includes(searchName.toLowerCase()),
-  );
+  const filtered = searchTerm.trim()
+    ? riders.filter((r) => {
+      const search = searchTerm.toLowerCase().trim();
+      const nameWords = r.name?.toLowerCase().split(" ") ?? [];
+      const emailWords = r.email?.toLowerCase().split(/[@.]/) ?? [];
+      return (
+        nameWords.some((w) => w === search) ||
+        emailWords.some((w) => w === search) ||
+        r.email?.toLowerCase() === search ||
+        String(r.id) === search
+      );
+    })
+    : riders;
 
-  const available = riders.filter((r) => r.isAvailable).length;
-  const active = riders.filter((r) => r.isActive).length;
+  const available = riders.filter((r) => r.status === "available").length;
+  const active = riders.filter((r) => r.status !== "offline").length;
 
   return (
     <div>
@@ -119,17 +132,25 @@ export default function RidersPage() {
       <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-black text-[#1a1f16]">All Riders</h2>
-          <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search
+              size={15}
+              onClick={() => setSearchName(searchName)} // icon click triggers search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] cursor-pointer hover:text-[#4a7c59] transition"
+            />
             <input
               type="text"
               placeholder="Search riders..."
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] px-4 py-2.5 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+              onChange={(e) => {
+                setSearchName(e.target.value);
+                if (!e.target.value.trim()) setSearchName(""); // clear results on empty
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setSearchName(searchName); // Enter triggers search
+              }}
+              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4a7c59] text-white">
-              <Search size={15} />
-            </div>
           </div>
         </div>
 
@@ -142,16 +163,7 @@ export default function RidersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#e0d9cc] text-left">
-                  {[
-                    "ID",
-                    "Name",
-                    "Email",
-                    "Phone",
-                    "Available",
-                    "Status",
-                    "Joined",
-                    "Action",
-                  ].map((h) => (
+                    {["ID", "Name", "Email", "Phone", "Status", "Vehicle", "Location", "Joined", "Action"].map((h) => (
                     <th
                       key={h}
                       className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
@@ -162,69 +174,78 @@ export default function RidersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((rider) => (
-                  <tr
-                    key={rider.id}
-                    className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]"
-                  >
-                    <td className="py-4 text-sm text-[#7a8a6a]">#{rider.id}</td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-600">
-                          {rider.name?.charAt(0).toUpperCase() ?? "R"}
+                  {filtered.map((rider) => (
+                    <tr
+                      key={rider.id}
+                      className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]"
+                    >
+                      <td className="py-4 text-sm text-[#7a8a6a]">#{rider.id}</td>
+
+                      {/* Name */}
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-[#1a1f16]">
+                            {rider.name}
+                          </span>
                         </div>
-                        <span className="text-sm font-semibold text-[#1a1f16]">
-                          {rider.name}
+                      </td>
+
+                      {/* Email */}
+                      <td className="py-4 text-sm text-[#7a8a6a]">{rider.email}</td>
+
+                      {/* Phone */}
+                      <td className="py-4 text-sm text-[#7a8a6a]">{rider.phone ?? "—"}</td>
+
+                      {/* Status */}
+                      <td className="py-4">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${rider.status === "available"
+                            ? "bg-green-100 text-green-700"
+                            : rider.status === "busy"
+                              ? "bg-orange-100 text-orange-600"
+                              : "bg-gray-100 text-gray-500"
+                          }`}>
+                          {rider.status === "available" ? "Available" : rider.status === "busy" ? "Busy" : "Offline"}
                         </span>
-                      </div>
-                    </td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">
-                      {rider.email}
-                    </td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">
-                      {rider.phone ?? "—"}
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${rider.isAvailable ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                      >
-                        {rider.isAvailable ? "Available" : "Busy"}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${rider.isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}
-                      >
-                        {rider.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">
-                      {new Date(rider.createdAt).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="py-4">
-                      <button
-                        onClick={() => handleDelete(rider.id)}
-                        disabled={deletingId === rider.id}
-                        className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-50"
-                      >
-                        {deletingId === rider.id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={12} />
-                        )}
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* Vehicle */}
+                      <td className="py-4 text-sm text-[#7a8a6a]">{rider.vehicle_type ?? "—"}</td>
+
+                      {/* Location */}
+                      <td className="py-4 text-sm text-[#7a8a6a]">{rider.current_location ?? "—"}</td>
+
+                      {/* Joined */}
+                      <td className="py-4 text-sm text-[#7a8a6a]">
+                        {rider.createdAt
+                          ? new Date(rider.createdAt).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                          : "—"}
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-4">
+                        <button
+                          onClick={() => handleDelete(rider.id)}
+                          disabled={deletingId === rider.id}
+                          className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-50"
+                        >
+                          {deletingId === rider.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 {filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       className="py-12 text-center text-sm text-[#7a8a6a]"
                     >
                       No riders found

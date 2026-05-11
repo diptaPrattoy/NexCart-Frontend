@@ -6,19 +6,25 @@ import Cookies from "js-cookie";
 import {
   Loader2,
   Search,
-  Trash2,
   Shield,
   UserCheck,
   UserX,
+  Clock,
+  ShieldOff,
+  ShieldCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+// ─────────────────────────────────────────────
+// TYPE
+// ─────────────────────────────────────────────
 interface Admin {
   id: number;
   name: string;
   email: string;
   isActive: boolean;
   isVerified: boolean;
+  isApproved: boolean;
   createdAt: string;
 }
 
@@ -26,27 +32,45 @@ const authHeader = () => ({
   headers: { Authorization: `Bearer ${Cookies.get("token")}` },
 });
 
+// Get logged-in admin id from token
+const getMyId = (): number | null => {
+  try {
+    const token = Cookies.get("token");
+    if (!token) return null;
+    return JSON.parse(atob(token.split(".")[1])).sub;
+  } catch {
+    return null;
+  }
+};
+
+// ─────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [searchName, setSearchName] = useState("");
   const [searchResults, setSearchResults] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [actionId, setActionId] = useState<number | null>(null);
+  const myId = getMyId();
 
   const fetchAdmins = async () => {
     try {
       setLoading(true);
       const res = await axios.get("http://localhost:3000/admin", authHeader());
-      setAdmins(res.data);
+      const data = Array.isArray(res.data) ? res.data : [];
+
+      // Always sort by ID ascending — oldest first, stable order
+      const sorted = data.sort((a: Admin, b: Admin) => a.id - b.id);
+      setAdmins(sorted);
     } catch {
       toast.error("Failed to load admins");
     } finally {
       setLoading(false);
     }
-    };
-  
-    
+  };
+
   useEffect(() => {
     fetchAdmins();
   }, []);
@@ -62,7 +86,16 @@ export default function AdminsPage() {
         `http://localhost:3000/admin/search?name=${searchName}`,
         authHeader(),
       );
-      setSearchResults(res.data);
+      const data = Array.isArray(res.data) ? res.data : [];
+      const search = searchName.toLowerCase().trim();
+
+      // Only show if search matches a full word in name
+      const filtered = data.filter((a: Admin) => {
+        const nameWords = a.name?.toLowerCase().split(" ") ?? [];
+        return nameWords.some((w) => w === search);
+      });
+
+      setSearchResults(filtered);
     } catch {
       toast.error("Search failed");
     } finally {
@@ -70,23 +103,86 @@ export default function AdminsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this admin?")) return;
+  // ── Approve admin ──
+  const handleApprove = async (id: number) => {
     try {
-      setDeletingId(id);
-      await axios.delete(`http://localhost:3000/admin/${id}`, authHeader());
-      toast.success("Admin deleted");
-      setAdmins((prev) => prev.filter((a) => a.id !== id));
-      setSearchResults((prev) => prev.filter((a) => a.id !== id));
-    } catch {
-      toast.error("Failed to delete admin");
+      setActionId(id);
+      await axios.patch(
+        `http://localhost:3000/admin/${id}/approve`,
+        {},
+        authHeader(),
+      );
+      toast.success("Admin approved successfully");
+      fetchAdmins();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to approve");
     } finally {
-      setDeletingId(null);
+      setActionId(null);
     }
   };
 
-  const displayAdmins = searchResults.length > 0 ? searchResults : admins;
+  // ── Deny admin (removes account) ──
+  const handleDeny = async (id: number) => {
+    if (!confirm("Deny and remove this admin account?")) return;
+    try {
+      setActionId(id);
+      await axios.patch(
+        `http://localhost:3000/admin/${id}/deny`,
+        {},
+        authHeader(),
+      );
+      toast.success("Admin denied and removed");
+      setAdmins((prev) => prev.filter((a) => a.id !== id));
+      setSearchResults((prev) => prev.filter((a) => a.id !== id));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to deny");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  // ── Deactivate (soft delete) ──
+  const handleDeactivate = async (id: number) => {
+    if (!confirm("Deactivate this admin? They will not be able to login."))
+      return;
+    try {
+      setActionId(id);
+      await axios.patch(
+        `http://localhost:3000/admin/${id}/deactivate`,
+        {},
+        authHeader(),
+      );
+      toast.success("Admin deactivated");
+      fetchAdmins();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to deactivate");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  // ── Reactivate ──
+  const handleActivate = async (id: number) => {
+    try {
+      setActionId(id);
+      await axios.patch(
+        `http://localhost:3000/admin/${id}/activate`,
+        {},
+        authHeader(),
+      );
+      toast.success("Admin reactivated");
+      fetchAdmins();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to activate");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const displayAdmins = searchName.trim() ? searchResults : admins;  const approved = admins.filter((a) => a.isApproved).length;
+  const pending = admins.filter((a) => !a.isApproved).length;
   const verified = admins.filter((a) => a.isVerified).length;
+  const unverified = admins.filter((a) => !a.isVerified).length;
   const active = admins.filter((a) => a.isActive).length;
 
   return (
@@ -94,11 +190,13 @@ export default function AdminsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#1a1f16]">Admins</h1>
-        <p className="mt-1 text-sm text-[#7a8a6a]">Manage all admin accounts</p>
+        <p className="mt-1 text-sm text-[#7a8a6a]">
+          Review pending admin requests and manage account access{" "}
+        </p>
       </div>
 
       {/* Stat row */}
-      <div className="mb-8 grid grid-cols-3 gap-5">
+      <div className="mb-8 grid grid-cols-5 gap-5">
         {[
           {
             label: "Total Admins",
@@ -107,14 +205,26 @@ export default function AdminsPage() {
             color: "bg-[#4a7c59]",
           },
           {
-            label: "Verified",
-            value: verified,
+            label: "Approved",
+            value: approved,
             icon: UserCheck,
             color: "bg-green-500",
           },
           {
+            label: "Pending",
+            value: pending,
+            icon: Clock,
+            color: "bg-amber-500",
+          },
+          {
+            label: "Verified",
+            value: verified,
+            icon: UserCheck,
+            color: "bg-blue-500",
+          },
+          {
             label: "Unverified",
-            value: admins.length - verified,
+            value: unverified,
             icon: UserX,
             color: "bg-red-400",
           },
@@ -137,31 +247,26 @@ export default function AdminsPage() {
       {/* Table */}
       <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
-          <h2 className="text-xl font-black text-[#1a1f16]">All Admins</h2>
-          <div className="flex items-center gap-2">
+          <div>
+            <h2 className="text-xl font-black text-[#1a1f16]">All Admins</h2>
+            <p className="mt-0.5 text-xs text-[#7a8a6a]">
+              {active} of {admins.length} active · Accounts are deactivated not
+              deleted
+            </p>
+          </div>
+          <div className="relative">
+            <Search size={15} onClick={handleSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] cursor-pointer hover:text-[#4a7c59] transition" />
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search admins..."
               value={searchName}
               onChange={(e) => {
                 setSearchName(e.target.value);
-                if (!e.target.value) setSearchResults([]);
+                if (!e.target.value.trim()) setSearchResults([]); // clear on empty
               }}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] px-4 py-2.5 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()} // search on Enter
+              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
-            <button
-              onClick={handleSearch}
-              disabled={searching}
-              className="flex items-center gap-2 rounded-xl bg-[#4a7c59] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3d6b4a] disabled:opacity-60"
-            >
-              {searching ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Search size={15} />
-              )}
-              Search
-            </button>
           </div>
         </div>
 
@@ -179,9 +284,10 @@ export default function AdminsPage() {
                     "Name",
                     "Email",
                     "Verified",
+                    "Approval",
                     "Status",
                     "Joined",
-                    "Action",
+                    "Actions",
                   ].map((h) => (
                     <th
                       key={h}
@@ -196,29 +302,56 @@ export default function AdminsPage() {
                 {displayAdmins.map((admin) => (
                   <tr
                     key={admin.id}
-                    className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]"
+                    className={`border-b border-[#f0ebe0] last:border-none transition hover:bg-[#faf8f3]
+  ${admin.isApproved && !admin.isActive ? "opacity-60 bg-gray-50" : ""}
+  ${!admin.isApproved ? "bg-amber-50/40" : ""}`}
                   >
                     <td className="py-4 text-sm text-[#7a8a6a]">#{admin.id}</td>
+
+                    {/* Name */}
                     <td className="py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d4e6c3] text-sm font-bold text-[#4a7c59]">
-                          {admin.name.charAt(0).toUpperCase()}
+                        <div>
+                          <span className="text-sm font-semibold text-[#1a1f16]">
+                            {admin.name}
+                          </span>
+                          {admin.id === myId && (
+                            <span className="ml-2 rounded-full bg-[#4a7c59] px-2 py-0.5 text-[10px] font-bold text-white">
+                              You
+                            </span>
+                          )}
+                          {admin.isApproved && !admin.isActive && (
+                            <span className="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                              Suspended
+                            </span>
+                          )}
                         </div>
-                        <span className="text-sm font-semibold text-[#1a1f16]">
-                          {admin.name}
-                        </span>
                       </div>
                     </td>
+
                     <td className="py-4 text-sm text-[#7a8a6a]">
                       {admin.email}
                     </td>
+
+                    {/* Verified */}
                     <td className="py-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isVerified ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
                       >
-                        {admin.isVerified ? "Verified" : "Pending"}
+                        {admin.isVerified ? "Verified" : "Unverified"}
                       </span>
                     </td>
+
+                    {/* Approval */}
+                    <td className="py-4">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isApproved ? "bg-[#d4e6c3] text-[#4a7c59]" : "bg-amber-100 text-amber-700"}`}
+                      >
+                        {admin.isApproved ? "Approved" : "Pending"}
+                      </span>
+                    </td>
+
+                    {/* Active status */}
                     <td className="py-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}
@@ -226,6 +359,7 @@ export default function AdminsPage() {
                         {admin.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
+
                     <td className="py-4 text-sm text-[#7a8a6a]">
                       {new Date(admin.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric",
@@ -233,26 +367,84 @@ export default function AdminsPage() {
                         year: "numeric",
                       })}
                     </td>
+
+                    {/* Actions */}
                     <td className="py-4">
-                      <button
-                        onClick={() => handleDelete(admin.id)}
-                        disabled={deletingId === admin.id}
-                        className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-500 hover:text-white disabled:opacity-50"
-                      >
-                        {deletingId === admin.id ? (
-                          <Loader2 size={12} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={12} />
-                        )}
-                        Delete
-                      </button>
+                      {/* Own account — no actions */}
+                      {admin.id === myId ? (
+                        <span className="text-xs text-[#7a8a6a] italic">
+                          Your account
+                        </span>
+                      ) : /* Pending + Unverified — cannot approve yet */
+                        !admin.isApproved && !admin.isVerified ? (
+                          <button
+                            onClick={() => handleDeny(admin.id)}
+                            disabled={actionId === admin.id}
+                            className="flex items-center gap-1 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                          >
+                            {actionId === admin.id ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <UserX size={11} />
+                            )}
+                            Reject
+                          </button>
+                        ) : /* Pending + Verified — can approve or deny */
+                          !admin.isApproved && admin.isVerified ? (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleApprove(admin.id)}
+                                disabled={actionId === admin.id}
+                                className="flex items-center gap-1 rounded-xl bg-green-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-600 disabled:opacity-50"
+                              >
+                                {actionId === admin.id ? <Loader2 size={11} className="animate-spin" /> : <UserCheck size={11} />}
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleDeny(admin.id)}
+                                disabled={actionId === admin.id}
+                                className="flex items-center gap-1 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
+                              >
+                                {actionId === admin.id ? <Loader2 size={11} className="animate-spin" /> : <UserX size={11} />}
+                                Deny
+                              </button>
+                            </div>
+                          ) : /* Approved + Active — Deactivate */
+                            admin.isActive ? (
+                              <button
+                                onClick={() => handleDeactivate(admin.id)}
+                                disabled={actionId === admin.id}
+                                className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:bg-orange-500 hover:text-white disabled:opacity-50"
+                              >
+                                {actionId === admin.id ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : (
+                                  <ShieldOff size={11} />
+                                )}
+                                Deactivate
+                              </button>
+                            ) : (
+                              /* Approved + Inactive — Reactivate */
+                              <button
+                                onClick={() => handleActivate(admin.id)}
+                                disabled={actionId === admin.id}
+                                className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600 transition hover:bg-green-500 hover:text-white disabled:opacity-50"
+                              >
+                                {actionId === admin.id ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : (
+                                  <ShieldCheck size={11} />
+                                )}
+                                Reactivate
+                              </button>
+                            )}
                     </td>
                   </tr>
                 ))}
                 {displayAdmins.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="py-12 text-center text-sm text-[#7a8a6a]"
                     >
                       No admins found

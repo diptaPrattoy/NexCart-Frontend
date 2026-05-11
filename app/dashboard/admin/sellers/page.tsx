@@ -125,17 +125,15 @@ export default function SellersPage() {
       <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-black text-[#1a1f16]">All Sellers</h2>
-          <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a]" />
             <input
               type="text"
               placeholder="Search sellers..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] px-4 py-2.5 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
+              className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4a7c59] text-white">
-              <Search size={15} />
-            </div>
           </div>
         </div>
 
