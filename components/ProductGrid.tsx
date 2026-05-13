@@ -611,7 +611,6 @@
 //     </Paper>
 //   );
 // }
-
 import Link from "next/link";
 
 import Box from "@mui/material/Box";
@@ -685,10 +684,6 @@ export default async function ProductGrid({
     filteredProducts = filteredProducts.filter(
       (product) => product.category === selectedCategory,
     );
-  }
-
-  if (priceFilter === "lowToHigh") {
-    filteredProducts.sort((a, b) => Number(a.price) - Number(b.price));
   }
 
   if (priceFilter === "highToLow") {
