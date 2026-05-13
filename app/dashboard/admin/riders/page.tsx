@@ -135,7 +135,7 @@ export default function RidersPage() {
           <div className="relative">
             <Search
               size={15}
-              onClick={() => setSearchName(searchName)} // icon click triggers search
+              onClick={() => setSearchTerm(searchName)}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] cursor-pointer hover:text-[#4a7c59] transition"
             />
             <input
@@ -144,10 +144,10 @@ export default function RidersPage() {
               value={searchName}
               onChange={(e) => {
                 setSearchName(e.target.value);
-                if (!e.target.value.trim()) setSearchName(""); // clear results on empty
+                if (!e.target.value.trim()) setSearchTerm("");
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") setSearchName(searchName); // Enter triggers search
+                if (e.key === "Enter") setSearchTerm(searchName);
               }}
               className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
