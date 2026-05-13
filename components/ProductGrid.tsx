@@ -623,9 +623,18 @@ import Typography from "@mui/material/Typography";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 import ProductFilterBar from "./ProductFilterBar";
 import AddToCartButton from "./AddToCartButton";
+
+export type SellerShop = {
+  id: number;
+  shopName: string;
+  shopAddress: string;
+  tradeLicense: string;
+};
 
 export type Product = {
   id: number;
@@ -635,6 +644,7 @@ export type Product = {
   price: number;
   quantity: number;
   productImage?: string | null;
+  sellerShop?: SellerShop | null;
 };
 
 export type PriceFilter = "default" | "lowToHigh" | "highToLow";
@@ -682,7 +692,7 @@ export default async function ProductGrid({
 
   if (selectedCategory !== "all") {
     filteredProducts = filteredProducts.filter(
-      (product) => product.category === selectedCategory,
+      (product) => product.category === selectedCategory
     );
   }
 
@@ -754,7 +764,8 @@ export default async function ProductGrid({
               }}
             >
               Explore products uploaded by NexCart sellers with real-time
-              availability, category filter, and price sorting.
+              availability, shop information, category filter, and price
+              sorting.
             </Typography>
           </Box>
 
@@ -964,11 +975,61 @@ function ProductCard({ product }: { product: Product }) {
           {product.category}
         </Typography>
 
+        <Box
+          sx={{
+            mt: 0.8,
+            display: "flex",
+            alignItems: "center",
+            gap: 0.7,
+            color: "text.secondary",
+          }}
+        >
+          <StorefrontIcon sx={{ fontSize: 17, color: "primary.main" }} />
+
+          <Typography
+            sx={{
+              fontSize: 13,
+              fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {product.sellerShop?.shopName || "No shop assigned"}
+          </Typography>
+        </Box>
+
+        {product.sellerShop?.shopAddress && (
+          <Box
+            sx={{
+              mt: 0.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 0.7,
+              color: "text.secondary",
+            }}
+          >
+            <LocationOnIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+
+            <Typography
+              sx={{
+                fontSize: 12.5,
+                fontWeight: 500,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {product.sellerShop.shopAddress}
+            </Typography>
+          </Box>
+        )}
+
         <Typography
           component="h3"
           variant="h6"
           sx={{
-            mt: 0.8,
+            mt: 1,
             fontWeight: 900,
             lineHeight: 1.35,
             color: "text.primary",
@@ -1054,4 +1115,4 @@ function ProductCard({ product }: { product: Product }) {
       </Box>
     </Paper>
   );
-}
+}  
