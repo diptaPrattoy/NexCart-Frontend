@@ -43,6 +43,16 @@ const sellerRegisterSchema = z.object({
     .min(6, "Password must be at least 6 characters")
     .max(255, "Password cannot be more than 255 characters"),
 
+  /// ======================
+  // SHOP FIELDS
+  // ======================
+
+  shopName: z.string().min(3, "Shop name must be at least 3 characters"),
+
+  shopAddress: z.string().min(5, "Shop address is required"),
+
+  tradeLicense: z.string().min(5, "Trade license is required"),
+
   nidImage: z
     .any()
     .refine((files) => files?.length === 1, "NID image is required")
@@ -89,9 +99,11 @@ export default function SellerRegisterPage() {
       formData.append("nidNumber", data.nidNumber);
       formData.append("password", data.password);
 
-      // Must match backend: FileInterceptor("nidImage")
-      formData.append("nidImage", data.nidImage[0]);
+      formData.append("shopName", data.shopName);
+      formData.append("shopAddress", data.shopAddress);
+      formData.append("tradeLicense", data.tradeLicense);
 
+      formData.append("nidImage", data.nidImage[0]);
       const response = await axios.post(
         "http://localhost:3000/seller",
         formData,
@@ -226,6 +238,33 @@ export default function SellerRegisterPage() {
               {...register("password")}
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+            />
+
+            <TextField
+              label="Shop Name"
+              placeholder="Enter shop name"
+              fullWidth
+              {...register("shopName")}
+              error={Boolean(errors.shopName)}
+              helperText={errors.shopName?.message}
+            />
+
+            <TextField
+              label="Shop Address"
+              placeholder="Enter shop address"
+              fullWidth
+              {...register("shopAddress")}
+              error={Boolean(errors.shopAddress)}
+              helperText={errors.shopAddress?.message}
+            />
+
+            <TextField
+              label="Trade License Number"
+              placeholder="Enter trade license number"
+              fullWidth
+              {...register("tradeLicense")}
+              error={Boolean(errors.tradeLicense)}
+              helperText={errors.tradeLicense?.message}
             />
 
             <Box>
