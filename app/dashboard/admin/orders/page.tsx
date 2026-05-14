@@ -13,6 +13,7 @@ interface OrderItem {
   id: number;
   quantity: number;
   product: { productName: string; price: number };
+  seller?: { id: number; name: string; shop?: { shopName: string } };
 }
 
 interface Order {
@@ -230,10 +231,17 @@ export default function OrdersPage() {
                   <div className="rounded-xl bg-[#faf8f3] p-4">
                     <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">Items</p>
                     {order.orderItems?.map((item) => (
-                      <p key={item.id} className="text-sm text-[#1a1f16]">
-                        {item.product?.productName} × {item.quantity}
-                        <span className="ml-2 text-xs text-[#7a8a6a]">৳{item.product?.price}</span>
-                      </p>
+                      <div key={item.id} className="mb-2">
+                        <p className="text-sm text-[#1a1f16]">
+                          {item.product?.productName} × {item.quantity}
+                          <span className="ml-2 text-xs text-[#7a8a6a]">৳{item.product?.price}</span>
+                        </p>
+                        {item.seller?.shop?.shopName && (
+                          <p className="text-xs text-[#7a8a6a]">
+                            {item.seller.shop.shopName}
+                          </p>
+                        )}
+                      </div>
                     ))}
                     <p className="mt-2 text-xs font-bold text-[#4a7c59]">
                       Total: ৳{Number(order.totalAmount).toLocaleString()}

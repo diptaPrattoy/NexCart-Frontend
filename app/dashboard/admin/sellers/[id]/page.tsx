@@ -44,7 +44,7 @@ interface Seller {
     nidNumber: string;
     shop: Shop | null;
     products: Product[];
-    createdAt: string;
+    orderItems?: { id: number }[];
 }
 
 // ─────────────────────────────────────────────
@@ -75,10 +75,13 @@ export default async function SellerDetailPage({
     params,
     searchParams,
 }: {
-    params: { id: string };
-    searchParams: { token?: string };
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ token?: string }>;
 }) {
-    const seller = await getSellerById(params.id, searchParams.token ?? "");
+    const { id } = await params;
+    const { token } = await searchParams;
+
+    const seller = await getSellerById(id, token ?? "");
 
     // 404 if not found
     if (!seller) notFound();
@@ -91,32 +94,28 @@ export default async function SellerDetailPage({
 
     return (
         <div>
-            {/* Back button */}
-            <div className="mb-6">
-                <Link
-                    href="/dashboard/admin/sellers"
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#e0d9cc] bg-white px-4 py-2 text-sm font-semibold text-[#4a7c59] transition hover:bg-[#4a7c59] hover:text-white"
-                >
-                    <ArrowLeft size={15} />
-                    Back to Sellers
-                </Link>
-            </div>
-
             {/* Header */}
             <div className="mb-8 flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-black text-blue-600">
-                    {seller.name?.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-3">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-black text-blue-600">
+                        {seller.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-[#1a1f16]">{seller.name}</h1>
+                        <p className="mt-1 text-sm text-[#7a8a6a]">
+                            Seller #{seller.id}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-3xl font-black text-[#1a1f16]">{seller.name}</h1>
-                    <p className="mt-1 text-sm text-[#7a8a6a]">
-                        Seller #{seller.id} · Joined{" "}
-                        {new Date(seller.createdAt).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                        })}
-                    </p>
+                {/* Back button */}
+                <div className="ms-auto mb-6">
+                    <Link
+                        href="/dashboard/admin/sellers"
+                        className="inline-flex items-center gap-2 rounded-xl border border-[#e0d9cc] bg-white px-4 py-2 text-sm font-semibold text-[#4a7c59] transition hover:bg-[#4a7c59] hover:text-white"
+                    >
+                        <ArrowLeft size={15} />
+                        Back to Sellers
+                    </Link>
                 </div>
             </div>
 
@@ -136,10 +135,10 @@ export default async function SellerDetailPage({
                         color: "bg-blue-500",
                     },
                     {
-                        label: "Shop Status",
-                        value: seller.shop ? "Active" : "No Shop",
-                        icon: Store,
-                        color: seller.shop ? "bg-green-500" : "bg-gray-400",
+                        label: "Total Orders",
+                        value: seller.orderItems?.length ?? 0,
+                        icon: ShoppingBag,
+                        color: "bg-green-500",
                     },
                 ].map(({ label, value, icon: Icon, color }) => (
                     <div
@@ -226,7 +225,7 @@ export default async function SellerDetailPage({
             {/* ── Products ── */}
             <div className="mt-6 rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
                 <h2 className="mb-5 text-xl font-black text-[#1a1f16]">
-                    Products ({totalProducts})
+                    Products
                 </h2>
 
                 {totalProducts === 0 ? (
@@ -264,9 +263,6 @@ export default async function SellerDetailPage({
                                         </td>
                                         <td className="py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#d4e6c3] text-xs font-bold text-[#4a7c59]">
-                                                    {product.productName.charAt(0).toUpperCase()}
-                                                </div>
                                                 <span className="text-sm font-semibold text-[#1a1f16]">
                                                     {product.productName}
                                                 </span>

@@ -33,6 +33,7 @@ interface Seller {
   };
   products?: { id: number; productName: string; price: number }[];
   createdAt: string;
+  quantity: number;
 }
 
 const authHeader = () => ({
@@ -45,6 +46,7 @@ export default function SellersPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchName, setSearchName] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // ← add this
 
   const fetchSellers = async () => {
     try {
@@ -79,20 +81,24 @@ export default function SellersPage() {
   };
 
   // Client-side search — starts-with word match
-  const filtered = searchName.trim()
+  const filtered = searchTerm.trim()
     ? sellers.filter((s) => {
-      const q = searchName.toLowerCase().trim();
+      const search = searchTerm.toLowerCase().trim();
       const nameWords = s.name?.toLowerCase().split(" ") ?? [];
-      const shopWords = s.shop?.shopName?.toLowerCase().split(" ") ?? [];
+      const emailWords = s.email?.toLowerCase().split(/[@.]/) ?? [];
       return (
-        nameWords.some((w) => w.startsWith(q)) ||
-        shopWords.some((w) => w.startsWith(q))
+        nameWords.some((w) => w === search) ||
+        emailWords.some((w) => w === search) ||
+        s.email?.toLowerCase() === search ||
+        String(s.id) === search
       );
     })
     : sellers;
 
-  const withShop = sellers.filter((s) => !!s.shop).length;
-  const withProducts = sellers.filter((s) => (s.products?.length ?? 0) > 0).length;
+  const totalProducts = sellers.reduce((sum, s) => sum + (s.products?.length ?? 0), 0);
+  const totalStock = sellers.reduce(
+    (sum, s) => sum + (s.products?.reduce((p, prod) => p + (prod.quantity ?? 0), 0) ?? 0), 0
+  );
   const token = Cookies.get("token") ?? "";
 
   return (
@@ -106,8 +112,8 @@ export default function SellersPage() {
       <div className="mb-8 grid grid-cols-3 gap-5">
         {[
           { label: "Total Sellers", value: sellers.length, icon: ShoppingBag, color: "bg-[#4a7c59]" },
-          { label: "With Shop", value: withShop, icon: Store, color: "bg-blue-500" },
-          { label: "With Products", value: withProducts, icon: Package, color: "bg-amber-500" },
+          { label: "Total Products", value: totalProducts, icon: Package, color: "bg-blue-500" },
+          { label: "Total Stock", value: totalStock, icon: Store, color: "bg-amber-500" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
             <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
@@ -124,12 +130,22 @@ export default function SellersPage() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-black text-[#1a1f16]">All Sellers</h2>
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a]" />
+            <Search
+              size={15}
+              onClick={() => setSearchTerm(searchName)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] cursor-pointer hover:text-[#4a7c59] transition"
+            />
             <input
               type="text"
               placeholder="Search sellers..."
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
+              onChange={(e) => {
+                setSearchName(e.target.value);
+                if (!e.target.value.trim()) setSearchTerm("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setSearchTerm(searchName);
+              }}
               className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
           </div>
@@ -140,20 +156,15 @@ export default function SellersPage() {
             <Loader2 size={28} className="animate-spin text-[#4a7c59]" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm font-semibold text-[#1a1f16]">
-              {searchName ? `No results for "${searchName}"` : "No sellers found"}
-            </p>
-            {searchName && (
-              <p className="mt-1 text-xs text-[#7a8a6a]">Try a different name</p>
-            )}
-          </div>
+            <div className="py-12 text-center text-sm text-[#7a8a6a]">
+              No sellers found
+            </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#e0d9cc] text-left">
-                  {["ID", "Name", "Email", "Phone", "Shop", "Products", "Joined", "Actions"].map((h) => (
+                      {["ID", "Name", "Email", "Phone", "Shop", "Products", "Stock", "Actions"].map((h) => (
                     <th key={h} className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">{h}</th>
                   ))}
                 </tr>
@@ -166,9 +177,6 @@ export default function SellersPage() {
                     {/* Name */}
                     <td className="py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                          {seller.name?.charAt(0).toUpperCase()}
-                        </div>
                         <span className="text-sm font-semibold text-[#1a1f16]">{seller.name}</span>
                       </div>
                     </td>
@@ -179,13 +187,9 @@ export default function SellersPage() {
                     {/* Shop */}
                     <td className="py-4">
                       {seller.shop ? (
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
-                          {seller.shop.shopName}
-                        </span>
+                        <span className="text-sm text-[#1a1f16]">{seller.shop.shopName}</span>
                       ) : (
-                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-500">
-                          No Shop
-                        </span>
+                        <span className="text-sm text-[#7a8a6a]">—</span>
                       )}
                     </td>
 
@@ -194,11 +198,8 @@ export default function SellersPage() {
                       {seller.products?.length ?? 0} products
                     </td>
 
-                    {/* Joined */}
                     <td className="py-4 text-sm text-[#7a8a6a]">
-                      {new Date(seller.createdAt).toLocaleDateString("en-GB", {
-                        day: "numeric", month: "short", year: "numeric",
-                      })}
+                      {seller.products?.reduce((sum: number, p: any) => sum + Number(p.quantity ?? 0), 0) ?? "—"}
                     </td>
 
                     {/* Actions */}

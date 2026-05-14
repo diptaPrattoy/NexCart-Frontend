@@ -14,8 +14,6 @@ interface Rider {
   status: "available" | "busy" | "offline";
   vehicle_type?: string;
   current_location?: string;
-  profileImage?: string | null;
-  createdAt: string;
 }
 
 const authHeader = () => ({
@@ -163,7 +161,7 @@ export default function RidersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#e0d9cc] text-left">
-                    {["ID", "Name", "Email", "Phone", "Status", "Vehicle", "Location", "Joined", "Action"].map((h) => (
+                    {["ID", "Name", "Email", "Phone", "Status", "Vehicle", "Location", "Action"].map((h) => (
                     <th
                       key={h}
                       className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
@@ -213,17 +211,6 @@ export default function RidersPage() {
 
                       {/* Location */}
                       <td className="py-4 text-sm text-[#7a8a6a]">{rider.current_location ?? "—"}</td>
-
-                      {/* Joined */}
-                      <td className="py-4 text-sm text-[#7a8a6a]">
-                        {rider.createdAt
-                          ? new Date(rider.createdAt).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })
-                          : "—"}
-                      </td>
 
                       {/* Action */}
                       <td className="py-4">
