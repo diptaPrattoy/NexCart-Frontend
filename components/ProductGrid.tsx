@@ -952,7 +952,7 @@ function ProductCard({ product }: { product: Product }) {
           <AddToCartButton
             productName={product.productName}
             quantity={Number(product.quantity)}
-          />
+             productId={product.id}     />
         </Box>
       </Box>
 
