@@ -4,208 +4,238 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import {
+  Camera,
+  User,
+  Mail,
+  ShieldCheck,
+  ArrowLeft,
+  Pencil,
+  CheckCircle,
+} from "lucide-react";
 
 export default function CustomerProfilePage() {
   const [user, setUser] = useState<any>(null);
-
   const [profilePic, setProfilePic] = useState<File | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-  });
-
+  const [preview, setPreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: "", email: "" });
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  // FETCH PROFILE
   useEffect(() => {
     const token = Cookies.get("token");
     const role = Cookies.get("role");
 
-    // AUTH CHECK
     if (!token || role !== "customer") {
       window.location.href = "/login/customer";
-
       return;
     }
 
-    // GET PROFILE
     axios
       .get("http://localhost:3000/customer/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        console.log(res.data);
-
         setUser(res.data);
-
-        setFormData({
-          name: res.data.name || "",
-          email: res.data.email || "",
-        });
+        setFormData({ name: res.data.name || "", email: res.data.email || "" });
       })
       .catch((err) => {
         console.log(err);
-
         toast.error("Failed to load profile");
       });
   }, []);
 
-  // UPDATE PROFILE
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProfilePic(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setLoading(true);
-
       const token = Cookies.get("token");
+      const fd = new FormData();
+      fd.append("name", formData.name);
+      fd.append("email", formData.email);
+      if (profilePic) fd.append("profilePic", profilePic);
 
-      // CREATE FORMDATA
-      const formDataToSend = new FormData();
-
-      formDataToSend.append("name", formData.name);
-
-      formDataToSend.append("email", formData.email);
-
-      // IMAGE
-      if (profilePic) {
-        formDataToSend.append("profilePic", profilePic);
-      }
-
-      console.log(profilePic);
-
-      // API REQUEST
       const res = await axios.put(
         `http://localhost:3000/customer/profile/${user.id}`,
-        formDataToSend,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        fd,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log(res.data);
-
-      toast.success("Profile Updated Successfully");
-
-      // REFRESH PROFILE
       setUser(res.data.user);
+      setPreview(null);
+      setProfilePic(null);
+      setSaved(true);
+      toast.success("Profile updated successfully 🎉");
+      setTimeout(() => setSaved(false), 3000);
     } catch (error: any) {
       console.log(error);
-
-      toast.error(error.response?.data?.message || "Update Failed");
+      toast.error(error.response?.data?.message || "Update failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const avatarSrc =
+    preview ||
+    (user?.profilePic
+      ? `http://localhost:3000/uploads/profile/${user.profilePic}?t=${Date.now()}`
+      : null);
+
+  const initials = user?.name
+    ?.split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg grid grid-cols-1 md:grid-cols-3 overflow-hidden">
-        {/* LEFT SIDE */}
-        <div className="bg-[#0f172a] text-white p-10 flex flex-col items-center justify-center">
-          {/* PROFILE IMAGE */}
-          <img
-            src={
-              user?.profilePic
-                ? `http://localhost:3000/uploads/profile/${user.profilePic}?t=${new Date().getTime()}`
-                : "https://i.pravatar.cc/200"
-            }
-            alt="Profile"
-            className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-100 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-3xl">
 
-          {/* NAME */}
-          <h1 className="text-2xl font-bold mt-6">
-            {user?.name || "Loading..."}
-          </h1>
+        {/* ── Back link ── */}
+        <a
+          href="/dashboard/customer"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition mb-6"
+        >
+          <ArrowLeft size={16} /> Back to Dashboard
+        </a>
 
-          {/* EMAIL */}
-          <p className="text-slate-300 mt-2 text-center">
-            {user?.email || "Loading..."}
-          </p>
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
 
-          {/* CHANGE PHOTO */}
-          <label className="mt-6 bg-blue-500 hover:bg-blue-600 transition px-6 py-3 rounded-xl font-semibold cursor-pointer">
-            Change Photo
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setProfilePic(e.target.files[0]);
-                }
-              }}
+          {/* ── Banner ── */}
+          <div className="h-28 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+            <div className="absolute inset-0 opacity-20"
+              style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }}
             />
-          </label>
+          </div>
 
-          {/* IMAGE NAME */}
-          {profilePic && (
-            <p className="mt-3 text-sm text-slate-300 text-center">
-              {profilePic.name}
-            </p>
-          )}
-        </div>
+          <div className="px-8 pb-8">
 
-        {/* RIGHT SIDE */}
-        <div className="md:col-span-2 p-10">
-          <h2 className="text-3xl font-bold text-slate-900 mb-8">
-            Edit Profile
-          </h2>
+            {/* ── Avatar row ── */}
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 mb-8">
+              {/* Avatar */}
+              <div className="relative w-fit">
+                <div className="w-28 h-28 rounded-2xl ring-4 ring-white shadow-lg overflow-hidden bg-indigo-100 flex items-center justify-center">
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-extrabold text-indigo-400">{initials ?? "?"}</span>
+                  )}
+                </div>
 
-          <form onSubmit={handleUpdate} className="space-y-6">
-            {/* NAME */}
-            <div>
-              <label className="block mb-2 text-slate-600 font-medium">
-                Full Name
-              </label>
+                {/* Camera button */}
+                <label className="absolute -bottom-2 -right-2 w-9 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-md transition-colors">
+                  <Camera size={15} />
+                  <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+                </label>
+              </div>
 
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    name: e.target.value,
-                  })
-                }
-                className="w-full border border-slate-300 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-400"
-              />
+              {/* Name + badge */}
+              <div className="sm:mb-2">
+                <h2 className="text-2xl font-extrabold text-slate-800 leading-tight">
+                  {user?.name ?? "—"}
+                </h2>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <ShieldCheck size={14} className="text-indigo-500" />
+                  <span className="text-xs font-semibold text-indigo-500">Verified Customer</span>
+                </div>
+              </div>
             </div>
 
-            {/* EMAIL */}
-            <div>
-              <label className="block mb-2 text-slate-600 font-medium">
-                Email
-              </label>
+            {/* ── File preview pill ── */}
+            {profilePic && (
+              <div className="mb-6 flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl w-fit text-sm text-indigo-700 font-medium">
+                <Camera size={14} /> {profilePic.name}
+                <button
+                  onClick={() => { setProfilePic(null); setPreview(null); }}
+                  className="ml-1 text-indigo-400 hover:text-indigo-700 font-bold"
+                >×</button>
+              </div>
+            )}
 
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    email: e.target.value,
-                  })
-                }
-                className="w-full border border-slate-300 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            {/* ── Form ── */}
+            <form onSubmit={handleUpdate} className="space-y-5">
 
-            {/* UPDATE BUTTON */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-500 hover:bg-blue-600 transition text-white px-8 py-4 rounded-2xl font-semibold shadow-lg"
-            >
-              {loading ? "Updating..." : "Update Profile"}
-            </button>
-          </form>
+              {/* Name */}
+              <div className="group">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                  <User size={13} /> Full Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Your full name"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 pr-10 text-slate-800 font-medium text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 focus:bg-white transition-all placeholder:text-slate-300"
+                  />
+                  <Pencil size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="group">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                  <Mail size={13} /> Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="you@example.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 pr-10 text-slate-800 font-medium text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 focus:bg-white transition-all placeholder:text-slate-300"
+                  />
+                  <Pencil size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-400 transition-colors" />
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-slate-100 pt-2" />
+
+              {/* Submit */}
+              <div className="flex items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex items-center gap-2 px-7 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-lg shadow-indigo-200"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+
+                {saved && (
+                  <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-semibold animate-pulse">
+                    <CheckCircle size={16} /> Saved!
+                  </div>
+                )}
+              </div>
+            </form>
+
+          </div>
         </div>
+
+        {/* ── Info card below ── */}
+        <div className="mt-4 bg-white rounded-2xl border border-slate-100 shadow-sm px-6 py-4 flex items-center gap-3">
+          <ShieldCheck size={18} className="text-indigo-400 shrink-0" />
+          <p className="text-xs text-slate-400">
+            Your personal information is encrypted and never shared with third parties.
+          </p>
+        </div>
+
       </div>
     </div>
   );

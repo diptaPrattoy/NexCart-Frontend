@@ -1,293 +1,316 @@
 "use client";
 
 import CartPage from "@/components/CartPage";
+import RecentOrders from "@/components/RecentOrders";
 import axios from "axios";
 import Cookies from "js-cookie";
-
+import Pusher from "pusher-js";
 import Link from "next/link";
-
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import {
+  User,
+  ShoppingCart,
+  Package,
+  LogOut,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Bell,
+  ChevronRight,
+} from "lucide-react";
 
 export default function CustomerDashboard() {
   const [user, setUser] = useState<any>(null);
-
   const [orders, setOrders] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "cart" | "orders">("overview");
+
+  useEffect(() => {
+    const pusher = new Pusher("8ce8e1219e4b306f5eba", { cluster: "ap2" });
+    const channel = pusher.subscribe("order-channel");
+
+    channel.bind("order-status-updated", (data: any) => {
+      console.log("Realtime Update:", data);
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === data.orderId ? { ...order, status: data.status } : order
+        )
+      );
+      toast.success(`Order #${data.orderId} is now ${data.status}`);
+    });
+
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const token = Cookies.get("token");
-
     const role = Cookies.get("role");
 
     if (!token || role !== "customer") {
       window.location.href = "/login/customer";
-
       return;
     }
 
     const payload = JSON.parse(atob(token.split(".")[1]));
 
-    // PROFILE
     axios
       .get("http://localhost:3000/customer/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => {
-        setUser(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      .then((res) => setUser(res.data))
+      .catch(console.log);
 
-    // ORDERS
     axios
       .get(`http://localhost:3000/customer/my-orders/${payload.sub}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => {
-        setOrders(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      .then((res) => setOrders(res.data))
+      .catch(console.log);
   }, []);
 
-  // LOGOUT
   const handleLogout = () => {
     Cookies.remove("token");
     Cookies.remove("role");
-
     window.location.href = "/login/customer";
   };
 
+  const stats = [
+    {
+      label: "Total Orders",
+      value: orders.length,
+      icon: TrendingUp,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
+      border: "border-indigo-100",
+    },
+    {
+      label: "Pending",
+      value: orders.filter((o) => o.status === "pending").length,
+      icon: Clock,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-100",
+    },
+    {
+      label: "Delivered",
+      value: orders.filter((o) => o.status === "delivered").length,
+      icon: CheckCircle,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
+    },
+  ];
+
+  const navItems = [
+    { key: "overview", label: "Overview", icon: TrendingUp },
+    { key: "cart",     label: "My Cart",  icon: ShoppingCart },
+    { key: "orders",   label: "Orders",   icon: Package },
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      {/* TOP PROFILE */}
-      <div className="bg-white rounded-3xl shadow-sm p-8 mb-8">
-        <div className="flex items-center justify-between flex-wrap gap-6">
-          {/* PROFILE */}
-          <div className="flex items-center gap-5">
+    <div className="min-h-screen bg-[#f4f6fb]">
+
+      {/* ── Sidebar ── */}
+      <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm hidden lg:flex">
+        {/* Brand */}
+        <div className="px-6 py-6 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <ShoppingCart size={16} className="text-white" />
+            </div>
+            <span className="text-lg font-extrabold text-slate-800 tracking-tight">ShopZone</span>
+          </div>
+        </div>
+
+        {/* Avatar */}
+        <div className="px-6 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
             <img
-              src={
-                user?.profilePic
-                  ? `http://localhost:3000/uploads/profile/${user.profilePic}`
-                  : "/no-image.png"
-              }
+              src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
               alt="Profile"
-              className="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100"
             />
-
-            <div>
-              <h1 className="text-4xl font-black text-slate-800">
-                {user?.name}
-              </h1>
-
-              <p className="text-slate-500 mt-2">{user?.email}</p>
+            <div className="min-w-0">
+              <p className="font-bold text-slate-800 text-sm truncate">{user?.name ?? "—"}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
             </div>
           </div>
+        </div>
 
-          {/* ACTIONS */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <Link
-              href="/dashboard/customer/profile"
-              className="px-6 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-            >
-              My Profile
-            </Link>
-
-            <Link
-              href="/dashboard/customer/cart"
-              className="px-6 py-3 rounded-2xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition"
-            >
-              Cart
-            </Link>
-
+        {/* Nav */}
+        <nav className="flex-1 px-4 py-4 flex flex-col gap-1">
+          {navItems.map(({ key, label, icon: Icon }) => (
             <button
-              onClick={() => {
-                document.getElementById("order")?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }}
-              className="px-6 py-3 rounded-2xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition"
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all
+                ${activeTab === key
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
             >
-              Orders
+              <Icon size={17} /> {label}
             </button>
+          ))}
 
-            <button
-              onClick={handleLogout}
-              className="px-6 py-3 rounded-2xl bg-red-500 text-white font-semibold hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <CartPage></CartPage>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* TOTAL */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm">
-          <h3 className="text-slate-500 font-medium">Total Orders</h3>
-
-          <h1 className="text-5xl font-black text-slate-800 mt-4">
-            {orders.length}
-          </h1>
-        </div>
-
-        {/* PENDING */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm">
-          <h3 className="text-slate-500 font-medium">Pending Orders</h3>
-
-          <h1 className="text-5xl font-black text-yellow-500 mt-4">
-            {orders.filter((o) => o.status === "pending").length}
-          </h1>
-        </div>
-
-        {/* DELIVERED */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm">
-          <h3 className="text-slate-500 font-medium">Delivered Orders</h3>
-
-          <h1 className="text-5xl font-black text-green-500 mt-4">
-            {orders.filter((o) => o.status === "delivered").length}
-          </h1>
-        </div>
-      </div>
-
-      {/* ORDERS */}
-      <div id="order" className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* HEADER */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Recent Orders</h2>
-
-            <p className="text-slate-500 text-sm mt-1">
-              Track your latest purchases
-            </p>
-          </div>
+          <Link
+            href="/dashboard/customer/profile"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all"
+          >
+            <User size={17} /> Profile
+          </Link>
 
           <Link
             href="/dashboard/customer/myorder"
-            className="px-5 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all"
           >
-            View All
+            <Package size={17} /> All Orders
           </Link>
+        </nav>
+
+        {/* Logout */}
+        <div className="px-4 py-4 border-t border-slate-100">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+          >
+            <LogOut size={17} /> Logout
+          </button>
         </div>
+      </aside>
 
-        {/* TABLE */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead className="bg-slate-50">
-              <tr className="text-left">
-                <th className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  Order ID
-                </th>
+      {/* ── Main ── */}
+      <div className="lg:pl-64">
 
-                <th className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  Product
-                </th>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-800">
+              {navItems.find((n) => n.key === activeTab)?.label ?? "Dashboard"}
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Welcome back, {user?.name?.split(" ")[0] ?? "there"} 👋
+            </p>
+          </div>
 
-                <th className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  Status
-                </th>
+          <div className="flex items-center gap-3">
+            {/* Mobile tabs */}
+            <div className="flex lg:hidden items-center gap-1">
+              {navItems.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                    ${activeTab === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-                <th className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  Date
-                </th>
-
-                <th className="px-6 py-4 text-sm font-semibold text-slate-500">
-                  Total
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {orders.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="text-center py-16 text-slate-400 text-lg"
-                  >
-                    No orders found
-                  </td>
-                </tr>
-              ) : (
-                orders.slice(0, 5).map((order: any) => (
-                  <tr
-                    key={order.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition"
-                  >
-                    {/* ID */}
-                    <td className="px-6 py-5 font-semibold text-slate-700">
-                      #{order.id}
-                    </td>
-
-                    {/* PRODUCT */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={
-                            order.orderItems?.[0]?.product?.productImage
-                              ? `http://localhost:3000/uploads/products/${order.orderItems[0].product.productImage}`
-                              : "/no-image.png"
-                          }
-                          alt="Product"
-                          className="w-14 h-14 rounded-xl object-cover border"
-                        />
-
-                        <div>
-                          <h3 className="font-semibold text-slate-800">
-                            {order.orderItems?.[0]?.product?.productName}
-                          </h3>
-
-                          <p className="text-sm text-slate-500">
-                            Qty: {order.orderItems?.[0]?.quantity}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="px-6 py-5">
-                      <span
-                        className={`px-4 py-1.5 rounded-full text-sm font-semibold
-
-                          ${
-                            order.status === "delivered"
-                              ? "bg-green-100 text-green-600"
-                              : order.status === "pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : order.status === "cancelled"
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-blue-100 text-blue-600"
-                          }
-                        `}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-
-                    {/* DATE */}
-                    <td className="px-6 py-5 text-slate-600">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-
-                    {/* TOTAL */}
-                    <td className="px-6 py-5">
-                      <span className="text-lg font-bold text-blue-600">
-                        ${order.totalAmount}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+            <button className="relative p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+              <Bell size={18} />
+              {orders.filter((o) => o.status === "pending").length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
               )}
-            </tbody>
-          </table>
-        </div>
+            </button>
+
+            <img
+              src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
+              alt="Profile"
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-100"
+            />
+          </div>
+        </header>
+
+        {/* Page Body */}
+        <main className="p-6 max-w-6xl mx-auto">
+
+          {/* ── Cart Tab ── */}
+          {activeTab === "cart" && <CartPage />}
+
+          {/* ── Orders Tab ── */}
+          {activeTab === "orders" && <RecentOrders />}
+
+          {/* ── Overview Tab ── */}
+          {activeTab === "overview" && (
+            <>
+              {/* Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className={`bg-white rounded-2xl border ${stat.border} p-5 flex items-center gap-4 shadow-sm`}
+                  >
+                    <div className={`${stat.bg} p-3 rounded-xl`}>
+                      <stat.icon size={22} className={stat.color} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-medium">{stat.label}</p>
+                      <p className={`text-3xl font-extrabold mt-0.5 ${stat.color}`}>{stat.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Profile Card */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                <div className="relative shrink-0">
+                  <img
+                    src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-2xl object-cover ring-4 ring-indigo-50"
+                  />
+                  <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white" />
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h2 className="text-2xl font-extrabold text-slate-800">{user?.name}</h2>
+                  <p className="text-slate-400 text-sm mt-1">{user?.email}</p>
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
+                    <Link
+                      href="/dashboard/customer/profile"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition shadow-md shadow-indigo-200"
+                    >
+                      <User size={14} /> Edit Profile
+                    </Link>
+                    <button
+                      onClick={() => setActiveTab("cart")}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition"
+                    >
+                      <ShoppingCart size={14} /> View Cart
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("orders")}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition"
+                    >
+                      <Package size={14} /> My Orders
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition"
+                    >
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Orders preview */}
+              <RecentOrders />
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setActiveTab("orders")}
+                  className="flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition"
+                >
+                  See all orders <ChevronRight size={16} />
+                </button>
+              </div>
+            </>
+          )}
+
+        </main>
       </div>
     </div>
   );
