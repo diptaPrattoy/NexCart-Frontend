@@ -82,6 +82,16 @@ export default function CustomerLoginPage() {
       // Success Toast
       toast.success("Login Successful 🎉");
 
+      // if (usertype == )
+      // {
+      //     window.location.href =
+      //   "/dashboard/customer";
+
+      // }else(tpyr == )
+      // {
+
+      // }
+      
       // Full Reload Redirect
       window.location.href =
         "/dashboard/customer";
