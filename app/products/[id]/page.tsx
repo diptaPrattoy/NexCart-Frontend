@@ -38,12 +38,9 @@ type Product = {
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/seller/products/${id}`,
-      {
-        cache: "no-store",
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/seller/products/${id}`, {
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       return null;
@@ -306,6 +303,7 @@ export default async function ProductDetailsPage({
                 <AddToCartButton
                   productName={product.productName}
                   quantity={Number(product.quantity)}
+                  productId={0}
                 />
               </Box>
             </Box>
