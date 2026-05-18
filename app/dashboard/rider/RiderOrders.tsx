@@ -288,8 +288,7 @@ const RiderOrders = ({
                     <td className="py-5 font-semibold">#{d.order.id}</td>
 
                     <td className="py-5 flex items-center gap-4">
-                      {renderStatusBadge(d.order.status)}
-
+                      {renderStatusBadge(d.status)}//age d.order.status chilo
                       <button
                         onClick={() => markDelivered(d.id)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl"
@@ -337,7 +336,7 @@ const RiderOrders = ({
                     <td className="py-5">#{d.order.id}</td>
 
                     <td className="py-5">
-                      {renderStatusBadge(d.order.status)}
+                      {renderStatusBadge(d.status)}
                     </td>
 
                     <td className="py-5">
