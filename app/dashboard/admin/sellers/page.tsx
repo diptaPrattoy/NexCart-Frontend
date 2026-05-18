@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,11 +13,9 @@ import {
   Package,
   Eye,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
-// ─────────────────────────────────────────────
 // TYPE — matches SellerEntity + relations
-// ─────────────────────────────────────────────
 interface Seller {
   id: number;
   name: string;
@@ -54,9 +51,17 @@ export default function SellersPage() {
       const res = await axios.get("http://localhost:3000/seller", authHeader());
       // Backend returns { message, data: [...] }
       const raw = res.data?.data ?? [];
-      setSellers(Array.isArray(raw) ? raw.sort((a: Seller, b: Seller) => a.id - b.id) : []);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to load sellers");
+      setSellers(
+        Array.isArray(raw)
+          ? raw.sort((a: Seller, b: Seller) => a.id - b.id)
+          : [],
+      );
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err?.response?.data?.message || "Failed to load sellers");
+      } else {
+        toast.error("Failed to load sellers");
+      }
     } finally {
       setLoading(false);
     }
@@ -73,8 +78,12 @@ export default function SellersPage() {
       await axios.delete(`http://localhost:3000/seller/${id}`, authHeader());
       toast.success("Seller deleted");
       setSellers((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      toast.error("Failed to delete seller");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err?.response?.data?.message || "Failed to delete seller");
+      } else {
+        toast.error("Failed to delete seller");
+      }
     } finally {
       setDeletingId(null);
     }
@@ -83,40 +92,66 @@ export default function SellersPage() {
   // Client-side search — starts-with word match
   const filtered = searchTerm.trim()
     ? sellers.filter((s) => {
-      const search = searchTerm.toLowerCase().trim();
-      const nameWords = s.name?.toLowerCase().split(" ") ?? [];
-      const emailWords = s.email?.toLowerCase().split(/[@.]/) ?? [];
-      return (
-        nameWords.some((w) => w === search) ||
-        emailWords.some((w) => w === search) ||
-        s.email?.toLowerCase() === search ||
-        String(s.id) === search
-      );
-    })
+        const search = searchTerm.toLowerCase().trim();
+        const nameWords = s.name?.toLowerCase().split(" ") ?? [];
+        const emailWords = s.email?.toLowerCase().split(/[@.]/) ?? [];
+        return (
+          nameWords.some((w) => w === search) ||
+          emailWords.some((w) => w === search) ||
+          s.email?.toLowerCase() === search ||
+          String(s.id) === search
+        );
+      })
     : sellers;
 
-  const totalProducts = sellers.reduce((sum, s) => sum + (s.products?.length ?? 0), 0);
-  const totalStock = sellers.reduce(
-    (sum, s) => sum + (s.products?.reduce((p, prod) => p + (prod.quantity ?? 0), 0) ?? 0), 0
+  const totalProducts = sellers.reduce(
+    (sum, s) => sum + (s.products?.length ?? 0),
+    0,
   );
-  const token = Cookies.get("token") ?? "";
+  const totalStock = sellers.reduce(
+    (sum, s) =>
+      sum + (s.products?.reduce((p, prod) => p + (prod.quantity ?? 0), 0) ?? 0),
+    0,
+  );
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-black text-[#1a1f16]">Sellers</h1>
-        <p className="mt-1 text-sm text-[#7a8a6a]">Manage all seller accounts</p>
+        <p className="mt-1 text-sm text-[#7a8a6a]">
+          Manage all seller accounts
+        </p>
       </div>
 
       {/* Stats */}
       <div className="mb-8 grid grid-cols-3 gap-5">
         {[
-          { label: "Total Sellers", value: sellers.length, icon: ShoppingBag, color: "bg-[#4a7c59]" },
-          { label: "Total Products", value: totalProducts, icon: Package, color: "bg-blue-500" },
-          { label: "Total Stock", value: totalStock, icon: Store, color: "bg-amber-500" },
+          {
+            label: "Total Sellers",
+            value: sellers.length,
+            icon: ShoppingBag,
+            color: "bg-[#4a7c59]",
+          },
+          {
+            label: "Total Products",
+            value: totalProducts,
+            icon: Package,
+            color: "bg-blue-500",
+          },
+          {
+            label: "Total Stock",
+            value: totalStock,
+            icon: Store,
+            color: "bg-amber-500",
+          },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
+          <div
+            key={label}
+            className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm"
+          >
+            <div
+              className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}
+            >
               <Icon size={18} className="text-white" />
             </div>
             <p className="text-sm text-[#7a8a6a]">{label}</p>
@@ -156,38 +191,65 @@ export default function SellersPage() {
             <Loader2 size={28} className="animate-spin text-[#4a7c59]" />
           </div>
         ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-[#7a8a6a]">
-              No sellers found
-            </div>
+          <div className="py-12 text-center text-sm text-[#7a8a6a]">
+            No sellers found
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#e0d9cc] text-left">
-                      {["ID", "Name", "Email", "Phone", "Shop", "Products", "Stock", "Actions"].map((h) => (
-                    <th key={h} className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">{h}</th>
+                  {[
+                    "ID",
+                    "Name",
+                    "Email",
+                    "Phone",
+                    "Shop",
+                    "Products",
+                    "Stock",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="pb-3 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((seller) => (
-                  <tr key={seller.id} className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]">
-                    <td className="py-4 text-sm text-[#7a8a6a]">#{seller.id}</td>
+                  <tr
+                    key={seller.id}
+                    className="border-b border-[#f0ebe0] last:border-none hover:bg-[#faf8f3]"
+                  >
+                    <td className="py-4 text-sm text-[#7a8a6a]">
+                      #{seller.id}
+                    </td>
 
                     {/* Name */}
                     <td className="py-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-[#1a1f16]">{seller.name}</span>
+                        <span className="text-sm font-semibold text-[#1a1f16]">
+                          {seller.name}
+                        </span>
                       </div>
                     </td>
 
-                    <td className="py-4 text-sm text-[#7a8a6a]">{seller.email}</td>
-                    <td className="py-4 text-sm text-[#7a8a6a]">{seller.phone}</td>
+                    <td className="py-4 text-sm text-[#7a8a6a]">
+                      {seller.email}
+                    </td>
+                    <td className="py-4 text-sm text-[#7a8a6a]">
+                      {seller.phone}
+                    </td>
 
                     {/* Shop */}
                     <td className="py-4">
                       {seller.shop ? (
-                        <span className="text-sm text-[#1a1f16]">{seller.shop.shopName}</span>
+                        <span className="text-sm text-[#1a1f16]">
+                          {seller.shop.shopName}
+                        </span>
                       ) : (
                         <span className="text-sm text-[#7a8a6a]">—</span>
                       )}
@@ -199,7 +261,10 @@ export default function SellersPage() {
                     </td>
 
                     <td className="py-4 text-sm text-[#7a8a6a]">
-                      {seller.products?.reduce((sum: number, p: any) => sum + Number(p.quantity ?? 0), 0) ?? "—"}
+                      {seller.products?.reduce(
+                        (sum: number, p: any) => sum + Number(p.quantity ?? 0),
+                        0,
+                      ) ?? "—"}
                     </td>
 
                     {/* Actions */}
@@ -207,7 +272,9 @@ export default function SellersPage() {
                       <div className="flex items-center gap-2">
                         {/* View → SSR dynamic route */}
                         <button
-                          onClick={() => router.push(`/dashboard/admin/sellers/${seller.id}?token=${token}`)}
+                          onClick={() =>
+                            router.push(`/dashboard/admin/sellers/${seller.id}`)
+                          }
                           className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#e0d9cc] bg-[#faf8f3] px-3 py-1.5 text-xs font-semibold text-[#4a7c59] transition hover:bg-[#4a7c59] hover:text-white"
                         >
                           <Eye size={12} />

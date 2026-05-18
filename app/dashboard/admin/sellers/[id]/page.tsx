@@ -1,4 +1,4 @@
-// ✅ SSR PAGE — no "use client" directive
+//  SSR PAGE — no "use client" directive
 // Data is fetched on the SERVER before the page renders
 // This satisfies: SSR + Dynamic Route [id] requirements
 
@@ -15,10 +15,9 @@ import {
     ShoppingBag,
     Tag,
 } from "lucide-react";
+import { cookies } from "next/headers";
 
-// ─────────────────────────────────────────────
 // TYPES
-// ─────────────────────────────────────────────
 interface Product {
     id: number;
     productName: string;
@@ -47,15 +46,13 @@ interface Seller {
     orderItems?: { id: number }[];
 }
 
-// ─────────────────────────────────────────────
 // SERVER-SIDE DATA FETCH
-// ─────────────────────────────────────────────
 async function getSellerById(id: string, token: string): Promise<Seller | null> {
     try {
         const res = await fetch(`http://localhost:3000/seller/${id}`, {
             cache: "no-store",
             headers: {
-                Authorization: `Bearer ${token}`, // ← pass token in header
+                Authorization: `Bearer ${token}`, //  pass token in header
             },
         });
 
@@ -68,18 +65,15 @@ async function getSellerById(id: string, token: string): Promise<Seller | null> 
     }
 }
 
-// ─────────────────────────────────────────────
 // PAGE COMPONENT — async Server Component
-// ─────────────────────────────────────────────
 export default async function SellerDetailPage({
     params,
-    searchParams,
 }: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ token?: string }>;
 }) {
     const { id } = await params;
-    const { token } = await searchParams;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value ?? "";
 
     const seller = await getSellerById(id, token ?? "");
 
@@ -158,7 +152,7 @@ export default async function SellerDetailPage({
 
             <div className="grid gap-6 lg:grid-cols-2">
 
-                {/* ── Seller Info ── */}
+                {/* Seller Info */}
                 <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
                     <h2 className="mb-5 text-xl font-black text-[#1a1f16]">
                         Seller Information
@@ -185,7 +179,7 @@ export default async function SellerDetailPage({
                     </div>
                 </div>
 
-                {/* ── Shop Info ── */}
+                {/* Shop Info */}
                 <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
                     <h2 className="mb-5 text-xl font-black text-[#1a1f16]">
                         Shop Information
@@ -222,7 +216,7 @@ export default async function SellerDetailPage({
                 </div>
             </div>
 
-            {/* ── Products ── */}
+            {/* Products */}
             <div className="mt-6 rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
                 <h2 className="mb-5 text-xl font-black text-[#1a1f16]">
                     Products

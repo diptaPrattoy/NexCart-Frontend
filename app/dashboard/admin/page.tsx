@@ -16,17 +16,14 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
-// ─────────────────────────────────────────────
 // TYPES
-// ─────────────────────────────────────────────
 interface AdminProfile {
   id: number;
   name: string;
   email: string;
   isActive: boolean;
-  isVerified: boolean;
   isApproved: boolean;
   createdAt: string;
 }
@@ -42,9 +39,7 @@ const authHeader = () => ({
   headers: { Authorization: `Bearer ${Cookies.get("token")}` },
 });
 
-// ─────────────────────────────────────────────
 // COMPONENT
-// ─────────────────────────────────────────────
 export default function AdminDashboardPage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
@@ -63,7 +58,7 @@ export default function AdminDashboardPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // ── Fetch profile ──
+  //  Fetch profile 
   const fetchProfile = async () => {
     try {
       setLoadingProfile(true);
@@ -84,7 +79,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // ── Fetch dashboard stats from real backend ──
+  //  Fetch dashboard stats from real backend 
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
@@ -153,13 +148,13 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  // ── Update own profile (PATCH) ──
+  //  Update own profile (PATCH) 
   const handleUpdateProfile = async () => {
     if (!profile) return;
     try {
       setSaving(true);
 
-      const updateData: any = {};
+      const updateData: Record<string, string> = {};
       if (editName.trim() && editName !== profile.name) {
         updateData.name = editName.trim();
       }
@@ -184,14 +179,18 @@ export default function AdminDashboardPage() {
       toast.success("Profile updated successfully!");
       setEditPassword("");
       fetchProfile();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to update profile");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to update profile");
+      } else {
+        toast.error("Failed to update profile");
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  // ── Stat card config ──
+  //  Stat card config 
   const statCards = [
     {
       label: "Total Orders",
@@ -265,7 +264,7 @@ export default function AdminDashboardPage() {
 
       {/* Profile + Edit section */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* ── My Profile card ── */}
+        {/*  My Profile card  */}
         <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
           <h2 className="mb-6 text-xl font-black text-[#1a1f16]">My Profile</h2>
 
@@ -286,16 +285,6 @@ export default function AdminDashboardPage() {
                   </p>
                   <p className="text-sm text-[#7a8a6a]">{profile?.email}</p>
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
-                    {/* Email verified via OTP */}
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold
-                        ${profile?.isVerified
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-600"
-                        }`}
-                    >
-                      {profile?.isVerified ? "✓ Verified" : "✗ Unverified"}
-                    </span>
 
                     {/* Approved by another admin */}
                     <span
@@ -368,7 +357,7 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        {/* ── Edit Profile card ── */}
+        {/*  Edit Profile card  */}
         <div className="rounded-2xl border border-[#e0d9cc] bg-white p-6 shadow-sm">
           <h2 className="mb-2 text-xl font-black text-[#1a1f16]">
             Update Profile

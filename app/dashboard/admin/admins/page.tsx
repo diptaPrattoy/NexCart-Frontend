@@ -13,17 +13,14 @@ import {
   ShieldOff,
   ShieldCheck,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
-// ─────────────────────────────────────────────
 // TYPE
-// ─────────────────────────────────────────────
 interface Admin {
   id: number;
   name: string;
   email: string;
   isActive: boolean;
-  isVerified: boolean;
   isApproved: boolean;
   createdAt: string;
 }
@@ -43,17 +40,14 @@ const getMyId = (): number | null => {
   }
 };
 
-// ─────────────────────────────────────────────
 // COMPONENT
-// ─────────────────────────────────────────────
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
-  const [searchName, setSearchName] = useState("");
-  const [searchResults, setSearchResults] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
   const myId = getMyId();
+  const [searchName, setSearchName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchAdmins = async () => {
     try {
@@ -75,35 +69,7 @@ export default function AdminsPage() {
     fetchAdmins();
   }, []);
 
-  const handleSearch = async () => {
-    if (!searchName.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      setSearching(true);
-      const res = await axios.get(
-        `http://localhost:3000/admin/search?name=${searchName}`,
-        authHeader(),
-      );
-      const data = Array.isArray(res.data) ? res.data : [];
-      const search = searchName.toLowerCase().trim();
-
-      // Only show if search matches a full word in name
-      const filtered = data.filter((a: Admin) => {
-        const nameWords = a.name?.toLowerCase().split(" ") ?? [];
-        return nameWords.some((w) => w === search);
-      });
-
-      setSearchResults(filtered);
-    } catch {
-      toast.error("Search failed");
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // ── Approve admin ──
+  //  Approve admin
   const handleApprove = async (id: number) => {
     try {
       setActionId(id);
@@ -114,16 +80,33 @@ export default function AdminsPage() {
       );
       toast.success("Admin approved successfully");
       fetchAdmins();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to approve");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to approve");
+      } else {
+        toast.error("Failed to approve");
+      }
     } finally {
       setActionId(null);
     }
   };
 
-  // ── Deny admin (removes account) ──
+  const displayAdmins = searchTerm.trim()
+    ? admins.filter((a) => {
+        const search = searchTerm.toLowerCase().trim();
+        const nameWords = a.name?.toLowerCase().split(" ") ?? [];
+        const emailWords = a.email?.toLowerCase().split(/[@.]/) ?? [];
+        return (
+          nameWords.some((w) => w === search) ||
+          emailWords.some((w) => w === search) ||
+          a.email?.toLowerCase() === search ||
+          String(a.id) === search
+        );
+      })
+    : admins;
+
+  //  Deny admin (removes account)
   const handleDeny = async (id: number) => {
-    if (!confirm("Deny and remove this admin account?")) return;
     try {
       setActionId(id);
       await axios.patch(
@@ -133,18 +116,19 @@ export default function AdminsPage() {
       );
       toast.success("Admin denied and removed");
       setAdmins((prev) => prev.filter((a) => a.id !== id));
-      setSearchResults((prev) => prev.filter((a) => a.id !== id));
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to deny");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err?.response?.data?.message || "Failed to deny");
+      } else {
+        toast.error("Failed to deny");
+      }
     } finally {
       setActionId(null);
     }
   };
 
-  // ── Deactivate (soft delete) ──
+  //  Deactivate (soft delete)
   const handleDeactivate = async (id: number) => {
-    if (!confirm("Deactivate this admin? They will not be able to login."))
-      return;
     try {
       setActionId(id);
       await axios.patch(
@@ -154,14 +138,18 @@ export default function AdminsPage() {
       );
       toast.success("Admin deactivated");
       fetchAdmins();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to deactivate");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to deactivate");
+      } else {
+        toast.error("Failed to deactivate");
+      }
     } finally {
       setActionId(null);
     }
   };
 
-  // ── Reactivate ──
+  //  Reactivate
   const handleActivate = async (id: number) => {
     try {
       setActionId(id);
@@ -172,18 +160,21 @@ export default function AdminsPage() {
       );
       toast.success("Admin reactivated");
       fetchAdmins();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to activate");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err?.response?.data?.message || "Failed to activate");
+      } else {
+        toast.error("Failed to activate");
+      }
     } finally {
       setActionId(null);
     }
   };
 
-  const displayAdmins = searchName.trim() ? searchResults : admins;  const approved = admins.filter((a) => a.isApproved).length;
+  const approved = admins.filter((a) => a.isApproved).length;
   const pending = admins.filter((a) => !a.isApproved).length;
-  const verified = admins.filter((a) => a.isVerified).length;
-  const unverified = admins.filter((a) => !a.isVerified).length;
   const active = admins.filter((a) => a.isActive).length;
+  const inactive = admins.filter((a) => !a.isActive).length;
 
   return (
     <div>
@@ -217,16 +208,16 @@ export default function AdminsPage() {
             color: "bg-amber-500",
           },
           {
-            label: "Verified",
-            value: verified,
-            icon: UserCheck,
+            label: "Active",
+            value: active,
+            icon: ShieldCheck,
             color: "bg-blue-500",
           },
           {
-            label: "Unverified",
-            value: unverified,
-            icon: UserX,
-            color: "bg-red-400",
+            label: "Inactive",
+            value: inactive,
+            icon: ShieldOff,
+            color: "bg-gray-400",
           },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
@@ -249,22 +240,24 @@ export default function AdminsPage() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-black text-[#1a1f16]">All Admins</h2>
-            <p className="mt-0.5 text-xs text-[#7a8a6a]">
-              {active} of {admins.length} active · Accounts are deactivated not
-              deleted
-            </p>
           </div>
           <div className="relative">
-            <Search size={15} onClick={handleSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a8a6a] cursor-pointer hover:text-[#4a7c59] transition" />
+            <Search
+              size={15}
+              onClick={() => setSearchTerm(searchName)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#7a8a6a] transition hover:text-[#4a7c59]"
+            />
             <input
               type="text"
               placeholder="Search admins..."
               value={searchName}
               onChange={(e) => {
                 setSearchName(e.target.value);
-                if (!e.target.value.trim()) setSearchResults([]); // clear on empty
+                if (!e.target.value.trim()) setSearchTerm("");
               }}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()} // search on Enter
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setSearchTerm(searchName);
+              }}
               className="rounded-xl border border-[#e0d9cc] bg-[#faf8f3] py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#4a7c59] focus:ring-2 focus:ring-[#4a7c59]/20"
             />
           </div>
@@ -283,7 +276,6 @@ export default function AdminsPage() {
                     "ID",
                     "Name",
                     "Email",
-                    "Verified",
                     "Approval",
                     "Status",
                     "Joined",
@@ -303,8 +295,8 @@ export default function AdminsPage() {
                   <tr
                     key={admin.id}
                     className={`border-b border-[#f0ebe0] last:border-none transition hover:bg-[#faf8f3]
-  ${admin.isApproved && !admin.isActive ? "opacity-60 bg-gray-50" : ""}
-  ${!admin.isApproved ? "bg-amber-50/40" : ""}`}
+                    ${admin.isApproved && !admin.isActive ? "opacity-60 bg-gray-50" : ""}
+                    ${!admin.isApproved ? "bg-amber-50/40" : ""}`}
                   >
                     <td className="py-4 text-sm text-[#7a8a6a]">#{admin.id}</td>
 
@@ -331,15 +323,6 @@ export default function AdminsPage() {
 
                     <td className="py-4 text-sm text-[#7a8a6a]">
                       {admin.email}
-                    </td>
-
-                    {/* Verified */}
-                    <td className="py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${admin.isVerified ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
-                      >
-                        {admin.isVerified ? "Verified" : "Unverified"}
-                      </span>
                     </td>
 
                     {/* Approval */}
@@ -370,13 +353,24 @@ export default function AdminsPage() {
 
                     {/* Actions */}
                     <td className="py-4">
-                      {/* Own account — no actions */}
                       {admin.id === myId ? (
                         <span className="text-xs text-[#7a8a6a] italic">
                           Your account
                         </span>
-                      ) : /* Pending + Unverified — cannot approve yet */
-                        !admin.isApproved && !admin.isVerified ? (
+                      ) : !admin.isApproved ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleApprove(admin.id)}
+                            disabled={actionId === admin.id}
+                            className="flex items-center gap-1 rounded-xl bg-green-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-600 disabled:opacity-50"
+                          >
+                            {actionId === admin.id ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : (
+                              <UserCheck size={11} />
+                            )}
+                            Approve
+                          </button>
                           <button
                             onClick={() => handleDeny(admin.id)}
                             disabled={actionId === admin.id}
@@ -387,64 +381,43 @@ export default function AdminsPage() {
                             ) : (
                               <UserX size={11} />
                             )}
-                            Reject
+                            Deny
                           </button>
-                        ) : /* Pending + Verified — can approve or deny */
-                          !admin.isApproved && admin.isVerified ? (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleApprove(admin.id)}
-                                disabled={actionId === admin.id}
-                                className="flex items-center gap-1 rounded-xl bg-green-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-600 disabled:opacity-50"
-                              >
-                                {actionId === admin.id ? <Loader2 size={11} className="animate-spin" /> : <UserCheck size={11} />}
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleDeny(admin.id)}
-                                disabled={actionId === admin.id}
-                                className="flex items-center gap-1 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-600 disabled:opacity-50"
-                              >
-                                {actionId === admin.id ? <Loader2 size={11} className="animate-spin" /> : <UserX size={11} />}
-                                Deny
-                              </button>
-                            </div>
-                          ) : /* Approved + Active — Deactivate */
-                            admin.isActive ? (
-                              <button
-                                onClick={() => handleDeactivate(admin.id)}
-                                disabled={actionId === admin.id}
-                                className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:bg-orange-500 hover:text-white disabled:opacity-50"
-                              >
-                                {actionId === admin.id ? (
-                                  <Loader2 size={11} className="animate-spin" />
-                                ) : (
-                                  <ShieldOff size={11} />
-                                )}
-                                Deactivate
-                              </button>
-                            ) : (
-                              /* Approved + Inactive — Reactivate */
-                              <button
-                                onClick={() => handleActivate(admin.id)}
-                                disabled={actionId === admin.id}
-                                className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600 transition hover:bg-green-500 hover:text-white disabled:opacity-50"
-                              >
-                                {actionId === admin.id ? (
-                                  <Loader2 size={11} className="animate-spin" />
-                                ) : (
-                                  <ShieldCheck size={11} />
-                                )}
-                                Reactivate
-                              </button>
-                            )}
+                        </div>
+                      ) : admin.isActive ? (
+                        <button
+                          onClick={() => handleDeactivate(admin.id)}
+                          disabled={actionId === admin.id}
+                          className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:bg-orange-500 hover:text-white disabled:opacity-50"
+                        >
+                          {actionId === admin.id ? (
+                            <Loader2 size={11} className="animate-spin" />
+                          ) : (
+                            <ShieldOff size={11} />
+                          )}
+                          Deactivate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivate(admin.id)}
+                          disabled={actionId === admin.id}
+                          className="flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600 transition hover:bg-green-500 hover:text-white disabled:opacity-50"
+                        >
+                          {actionId === admin.id ? (
+                            <Loader2 size={11} className="animate-spin" />
+                          ) : (
+                            <ShieldCheck size={11} />
+                          )}
+                          Reactivate
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
                 {displayAdmins.length === 0 && (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="py-12 text-center text-sm text-[#7a8a6a]"
                     >
                       No admins found

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 
 // ZOD SCHEMA
@@ -28,7 +28,6 @@ type AdminLoginFormData = z.infer<typeof adminLoginSchema>;
 // COMPONENT
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,13 +40,10 @@ export default function AdminLoginPage() {
     mode: "onTouched",
   });
 
-  // ─────────────────────────────────────────────
   // SUBMIT → Zod → API → JWT → Redirect
-  // ─────────────────────────────────────────────
   const onSubmit = async (data: AdminLoginFormData) => {
     try {
       setLoading(true);
-      setServerError("");
 
       // Axios API call
       const response = await axios.post(
@@ -67,14 +63,16 @@ export default function AdminLoginPage() {
         sameSite: "strict",
       });
 
-          toast.success("Login successful!");
+      toast.success("Login successful!");
 
       // Redirect
       router.push("/dashboard/admin");
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Login failed");
+      } else {
+        toast.error("Login failed");
+      }
     }
   };
 
@@ -89,7 +87,7 @@ export default function AdminLoginPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-green-50">
         {/* ── Page body ── */}
         <main className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4 py-16">
           <div className="w-full max-w-md">
@@ -179,13 +177,6 @@ export default function AdminLoginPage() {
                   </button>
                 </div>
 
-                {/* Server error */}
-                {serverError && (
-                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    ⛔ {serverError}
-                  </div>
-                )}
-
                 {/* Submit */}
                 <button
                   type="submit"
@@ -222,7 +213,7 @@ export default function AdminLoginPage() {
 
                 {/* Register link */}
                 <p className="text-center text-sm text-gray-500">
-                  Don&apos;t have an account? { "  "}
+                  Don&apos;t have an account? {"  "}
                   <span
                     onClick={() => router.push("/register/admin")}
                     className="cursor-pointer font-semibold text-green-600 transition hover:text-green-700 hover:underline"
@@ -235,50 +226,6 @@ export default function AdminLoginPage() {
           </div>
         </main>
       </div>
-      <Toaster
-        position="top-right"
-        containerStyle={{
-          top: 100,
-          right: 20,
-        }}
-        toastOptions={{
-          duration: 3000,
-
-          style: {
-            background: "#ffffff",
-            color: "#0f172a",
-            border: "1px solid #d1d5db",
-            padding: "16px",
-            borderRadius: "16px",
-            fontSize: "16px",
-            fontWeight: "600",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-          },
-
-          success: {
-            style: {
-              border: "1px solid #22c55e",
-            },
-
-            iconTheme: {
-              primary: "#22c55e",
-              secondary: "#ffffff",
-            },
-          },
-
-          error: {
-            style: {
-              border: "1px solid #ef4444",
-            },
-
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: "#ffffff",
-            },
-          },
-        }}
-      />
-      ;
     </>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { Loader2, Search, Users, ShoppingCart, BadgeDollarSign, Clock } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 interface Customer {
   id: number;
@@ -77,12 +77,16 @@ export default function CustomersPage() {
       );
 
       setCustomers(sortedCustomers);
-    } catch {
-      toast.error("Failed to load customers");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to load customers");
+      } else {
+        toast.error("Failed to load customers");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   useEffect(() => {
     fetchCustomers();
