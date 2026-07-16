@@ -15,6 +15,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 
 import ProductFilterBar from "./ProductFilterBar";
 import AddToCartButton from "./AddToCartButton";
+import axios from "axios";
 
 export type SellerShop = {
   id: number;
@@ -47,21 +48,14 @@ const PRODUCT_CATEGORIES = [
 ];
 
 async function getProducts(): Promise<Product[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/seller/products`, {
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-
-    return Array.isArray(data) ? data : data?.data || [];
-  } catch {
-    return [];
-  }
+ try {
+   const response = await axios.get(`${API_BASE_URL}/seller/products`);
+   const data = response.data;
+   return Array.isArray(data) ? data : data?.data || [];
+ } catch (error) {
+   console.error(error);
+   return [];
+ }
 }
 
 type ProductGridProps = {

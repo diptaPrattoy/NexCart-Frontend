@@ -256,7 +256,7 @@ export default function CustomerDashboard() {
               </div>
 
               {/* Profile Card */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              {/* <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 <div className="relative shrink-0">
                   <img
                     src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
@@ -295,7 +295,7 @@ export default function CustomerDashboard() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Recent Orders preview */}
               <RecentOrders />

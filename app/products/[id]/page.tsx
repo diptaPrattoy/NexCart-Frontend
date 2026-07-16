@@ -15,6 +15,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 
 import AddToCartButton from "@/components/AddToCartButton";
+import axios from "axios";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -38,18 +39,7 @@ type Product = {
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/seller/products/${id}`,
-      {
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
+    const { data } = await axios.get(`/seller/products/${id}`);
 
     return data?.data || data;
   } catch {
@@ -305,8 +295,7 @@ export default async function ProductDetailsPage({
               <Box sx={{ mt: 5 }}>
                 <AddToCartButton
                   productName={product.productName}
-                  quantity={Number(product.quantity)}
-                />
+                  quantity={Number(product.quantity)} productId={0}                />
               </Box>
             </Box>
           </Box>
