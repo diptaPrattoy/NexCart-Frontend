@@ -39,7 +39,15 @@ type Product = {
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const { data } = await axios.get(`/seller/products/${id}`);
+    const response = await fetch(`${API_BASE_URL}/seller/products/${id}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
 
     return data?.data || data;
   } catch {
@@ -295,7 +303,9 @@ export default async function ProductDetailsPage({
               <Box sx={{ mt: 5 }}>
                 <AddToCartButton
                   productName={product.productName}
-                  quantity={Number(product.quantity)} productId={0}                />
+                  quantity={Number(product.quantity)}
+                  productId={0}
+                />
               </Box>
             </Box>
           </Box>
