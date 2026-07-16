@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:3000";
@@ -118,6 +120,13 @@ export default function OrdersSection({
                     ৳{Number(order.totalAmount).toLocaleString()}
                   </p>
                 </div>
+
+                {/* VIEW BUTTON */}
+                <Link href={`/dashboard/seller/orders/${order.id}`}>
+                  <button className="px-4 py-2 rounded-lg bg-black text-white text-sm font-bold hover:opacity-90">
+                    View
+                  </button>
+                </Link>
               </div>
 
               {/* ITEMS */}

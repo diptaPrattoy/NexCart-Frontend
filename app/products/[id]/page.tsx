@@ -22,11 +22,11 @@ type Product = {
   sellerShop?: SellerShop | null;
 };
 
+import axios from "axios";
+
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/seller/products/${id}`, {
-      cache: "no-store",
-    });
+    const response = await axios.get(`${API_BASE_URL}/seller/products/${id}`);
 
     if (!response.ok) return null;
 
@@ -36,7 +36,6 @@ async function getProduct(id: string): Promise<Product | null> {
     return null;
   }
 }
-
 export default async function ProductDetailsPage({
   params,
 }: {

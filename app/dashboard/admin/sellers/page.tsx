@@ -28,7 +28,12 @@ interface Seller {
     shopAddress: string;
     tradeLicense: string;
   };
-  products?: { id: number; productName: string; price: number }[];
+  products?: {
+    id: number;
+    productName: string;
+    price: number;
+    quantity: number;
+  }[];
   createdAt: string;
   quantity: number;
 }

@@ -48,14 +48,16 @@ const PRODUCT_CATEGORIES = [
 ];
 
 async function getProducts(): Promise<Product[]> {
- try {
-   const response = await axios.get(`${API_BASE_URL}/seller/products`);
-   const data = response.data;
-   return Array.isArray(data) ? data : data?.data || [];
- } catch (error) {
-   console.error(error);
-   return [];
- }
+  try {
+    const response = await axios.get(`${API_BASE_URL}/seller/products`);
+
+    const data = response.data;
+
+    return Array.isArray(data) ? data : data?.data || [];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }
 
 type ProductGridProps = {
@@ -73,7 +75,7 @@ export default async function ProductGrid({
 
   if (selectedCategory !== "all") {
     filteredProducts = filteredProducts.filter(
-      (product) => product.category === selectedCategory
+      (product) => product.category === selectedCategory,
     );
   }
 
@@ -339,7 +341,8 @@ function ProductCard({ product }: { product: Product }) {
           <AddToCartButton
             productName={product.productName}
             quantity={Number(product.quantity)}
-             productId={product.id}     />
+            productId={product.id}
+          />
         </Box>
       </Box>
 
@@ -437,6 +440,7 @@ function ProductCard({ product }: { product: Product }) {
             overflow: "hidden",
           }}
         >
+
           {product.description || "No description available."}
         </Typography>
 
