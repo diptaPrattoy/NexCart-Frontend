@@ -2,47 +2,63 @@
 // "use client";
 
 import Link from "next/link";
+import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import Container from "@mui/material/Container";
-import Stack from "@mui/material/Stack";
-
-import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
-import { LayoutDashboard } from "lucide-react";
+import { ShoppingBag, LayoutDashboard } from "lucide-react";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Mounted State
   const [mounted, setMounted] = useState(false);
-
-  // Token State
   const [token, setToken] = useState<string | undefined>();
   const [role, setRole] = useState<string | undefined>();
+  const [cartCount, setCartCount] = useState(0);
+
+  const loadCart = async () => {
+    const currentToken = Cookies.get("token");
+    const currentRole = Cookies.get("role");
+
+    if (!currentToken || currentRole !== "customer") {
+      setCartCount(0);
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(
+        atob(currentToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+      );
+      const customerId = payload.sub;
+
+      const res = await axios.get(
+        `http://localhost:3000/customer/cart/${customerId}`,
+        { headers: { Authorization: `Bearer ${currentToken}` } }
+      );
+
+      setCartCount(res.data.length);
+    } catch (err) {
+      console.log("loadCart error:", err);
+      setCartCount(0);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     setToken(Cookies.get("token"));
     setRole(Cookies.get("role"));
   }, [pathname]);
 
-  // Load token whenever route changes
   useEffect(() => {
-    setMounted(true);
+    loadCart();
 
-    const savedToken = Cookies.get("token");
+    window.addEventListener("cartUpdated", loadCart);
+    return () => {
+      window.removeEventListener("cartUpdated", loadCart);
+    };
+  }, [role, pathname]);
 
-    setToken(savedToken);
-  }, [pathname]);
-
-  // Prevent Hydration Error
   if (!mounted) return null;
 
   const navItems = [
@@ -52,7 +68,6 @@ export default function Header() {
     { label: "About", href: "/about" },
   ];
 
-  // Logout Function
   const handleLogout = () => {
     Cookies.remove("token");
     Cookies.remove("role");
@@ -60,136 +75,74 @@ export default function Header() {
     Cookies.remove("customer");
 
     setToken(undefined);
-
     router.push("/login");
     router.refresh();
   };
+
   const goToDashboard = () => {
     const path = role ? `/dashboard/${role}` : "/dashboard";
     router.push(path);
 
   };
+
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      sx={{
-        bgcolor: "rgba(255,255,255,0.9)",
-        backdropFilter: "blur(14px)",
-        borderBottom: "1px solid #e5e7eb",
-      }}
-    >
-      <Container maxWidth="xl">
-        <Toolbar
-          disableGutters
-          sx={{
-            py: 1.2,
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Logo */}
-          <Box
-            component={Link}
-            href="/"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              textDecoration: "none",
-            }}
-          >
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: 3,
-                bgcolor: "primary.main",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ShoppingBagIcon />
-            </Box>
-
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 900,
-                color: "text.primary",
-                letterSpacing: "-0.5px",
-              }}
-            >
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between py-3">
+          <Link href="/" className="flex items-center gap-2.5 no-underline">
+            <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+              <ShoppingBag size={22} />
+            </div>
+            <span className="text-2xl font-black text-slate-800 tracking-tight">
               NexCart
-            </Typography>
-          </Box>
+            </span>
+          </Link>
 
-          {/* Nav Items */}
-          <Stack
-            direction="row"
-            spacing={4}
-            sx={{
-              display: { xs: "none", md: "flex" },
-              alignItems: "center",
-            }}
-          >
+          <nav className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
-              <Typography
+              <Link
                 key={item.label}
-                component={Link}
                 href={item.href}
-                sx={{
-                  color: "text.secondary",
-                  textDecoration: "none",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  transition: "0.2s",
-
-                  "&:hover": {
-                    color: "primary.main",
-                  },
-                }}
+                className="text-slate-500 text-[15px] font-semibold no-underline hover:text-indigo-600 transition-colors"
               >
                 {item.label}
-              </Typography>
+              </Link>
             ))}
-          </Stack>
+          </nav>
 
-          {/* Auth Buttons */}
-          <Stack direction="row" spacing={1.5}>
+          <div className="flex items-center gap-3">
             {!token ? (
               <>
-                {/* Login */}
-                <Button
-                  component={Link}
+                <Link
                   href="/login"
-                  variant="outlined"
-                  sx={{
-                    borderColor: "#d1d5db",
-                    color: "text.primary",
-
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      color: "primary.main",
-                      bgcolor: "white",
-                    },
-                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:border-indigo-600 hover:text-indigo-600 transition-colors"
                 >
                   Login
-                </Button>
-
-                {/* Register */}
-                <Button component={Link} href="/register" variant="contained">
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors"
+                >
                   Register
-                </Button>
+                </Link>
               </>
             ) : (
               <>
+                {role === "customer" && cartCount > 0 && (
+                  <Link
+                    href="dashboard/customer/?tab=cart"
+                    className="relative px-4 py-2 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors"
+                  >
+                    🛒 Cart
+                    <span className="absolute -top-2 -right-2 w-[22px] h-[22px] rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  </Link>
+                )}
+
                 <button
                   onClick={goToDashboard}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm w-full text-left"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm"
                 >
                   <LayoutDashboard size={15} />
                   Dashboard
@@ -199,18 +152,18 @@ export default function Header() {
                     </span>
                   )}
                 </button>
-                <Button
-                  variant="contained"
-                  color="error"
+
+                <button
                   onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm hover:bg-red-700 transition-colors"
                 >
                   Logout
-                </Button>
+                </button>
               </>
             )}
-          </Stack>
-        </Toolbar>
-      </Container>
-    </AppBar>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }

@@ -12,6 +12,7 @@ import {
   Tag,
   CreditCard,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -87,6 +88,8 @@ export default function CartPage() {
       });
       setCartItems((prev) => prev.filter((item) => item.id !== id));
       toast.success("Item removed from cart");
+        window.dispatchEvent(new Event("cartUpdated")); // 👈 add this
+
     } catch (error) {
       console.log(error);
       toast.error("Failed to remove item");
@@ -169,12 +172,12 @@ export default function CartPage() {
             <p className="text-slate-400 text-sm">
               Add some products to get started.
             </p>
-            <a
-              href="/products"
+            <Link
+              href="/"
               className="mt-2 inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors"
             >
               Browse Products
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 items-start">
