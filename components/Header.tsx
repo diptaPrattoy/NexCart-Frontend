@@ -82,6 +82,7 @@ export default function Header() {
   const goToDashboard = () => {
     const path = role ? `/dashboard/${role}` : "/dashboard";
     router.push(path);
+
   };
 
   return (

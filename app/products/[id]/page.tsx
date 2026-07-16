@@ -27,12 +27,9 @@ import axios from "axios";
 async function getProduct(id: string): Promise<Product | null> {
   try {
     const response = await axios.get(`${API_BASE_URL}/seller/products/${id}`);
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    return data?.data || data;
-  } catch {
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error("Error fetching product:", error);
     return null;
   }
 }
