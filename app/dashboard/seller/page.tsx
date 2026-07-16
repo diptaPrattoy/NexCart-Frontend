@@ -128,7 +128,7 @@ const sectionTitles: Record<string, string> = {
 
 export default function SellerDashboardPage() {
   const [activeSection, setActiveSection] = useState<
-    "dashboard" | "products" | "orders" | "profile`"
+    "dashboard" | "products" | "orders" | "profile"
   >("dashboard");
 
   const [seller, setSeller] = useState<Seller | null>(null);
