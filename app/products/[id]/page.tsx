@@ -1,21 +1,6 @@
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-import Container from "@mui/material/Container";
-import Divider from "@mui/material/Divider";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import StorefrontIcon from "@mui/icons-material/Storefront";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-
 import Link from "next/link";
-
+import { ArrowLeft, ShoppingCart, Store, MapPin, Package } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
-import axios from "axios";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -43,12 +28,9 @@ async function getProduct(id: string): Promise<Product | null> {
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      return null;
-    }
+    if (!response.ok) return null;
 
     const data = await response.json();
-
     return data?.data || data;
   } catch {
     return null;
@@ -61,43 +43,30 @@ export default async function ProductDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   const product = await getProduct(id);
 
   if (!product) {
     return (
-      <Container maxWidth="lg" sx={{ py: 10 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 6,
-            borderRadius: 3,
-            textAlign: "center",
-            border: "1px solid #e5e7eb",
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 900 }}>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 md:p-16 text-center max-w-md w-full">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
+            <Package className="text-red-400" size={28} />
+          </div>
+          <h1 className="text-2xl font-black text-slate-800">
             Product Not Found
-          </Typography>
-
-          <Typography sx={{ mt: 1.5, color: "text.secondary" }}>
+          </h1>
+          <p className="mt-2 text-slate-500 text-sm">
             The product you are looking for does not exist.
-          </Typography>
-
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              variant="contained"
-              sx={{
-                mt: 4,
-                bgcolor: "primary.main",
-              }}
-            >
-              Back To Home
-            </Button>
+          </p>
+          <Link
+            href="/"
+            className="mt-6 inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back To Home
           </Link>
-        </Paper>
-      </Container>
+        </div>
+      </div>
     );
   }
 
@@ -108,209 +77,108 @@ export default async function ProductDetailsPage({
   const isOutOfStock = Number(product.quantity) <= 0;
 
   return (
-    <Box
-      sx={{
-        bgcolor: "#f8fafc",
-        minHeight: "100vh",
-        py: {
-          xs: 6,
-          md: 10,
-        },
-      }}
-    >
-      <Container maxWidth="lg">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            sx={{
-              mb: 4,
-              color: "text.primary",
-            }}
-          >
-            Back
-          </Button>
+    <div className="min-h-screen bg-slate-50 py-8 md:py-14">
+      <div className="max-w-6xl mx-auto px-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-semibold text-sm mb-6 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back
         </Link>
 
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: 4,
-            overflow: "hidden",
-            border: "1px solid #e5e7eb",
-          }}
-        >
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "1fr 1fr",
-              },
-            }}
-          >
-            {/* LEFT IMAGE */}
-            <Box
-              sx={{
-                bgcolor: "#ffffff",
-                minHeight: 500,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-              }}
-            >
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {/* LEFT — Image */}
+            <div className="relative bg-slate-50 min-h-[320px] md:min-h-[560px] flex items-center justify-center">
               {imageUrl ? (
-                <Box
-                  component="img"
+                <img
                   src={imageUrl}
                   alt={product.productName}
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <ShoppingCartIcon
-                  sx={{
-                    fontSize: 100,
-                    color: "primary.main",
-                  }}
-                />
+                <ShoppingCart className="text-indigo-200" size={100} />
               )}
 
-              <Chip
-                label={isOutOfStock ? "Out of Stock" : "In Stock"}
-                sx={{
-                  position: "absolute",
-                  top: 20,
-                  left: 20,
-                  bgcolor: isOutOfStock ? "#fee2e2" : "#dcfce7",
-                  color: isOutOfStock ? "#b91c1c" : "#15803d",
-                  fontWeight: 900,
-                }}
-              />
-            </Box>
-
-            {/* RIGHT CONTENT */}
-            <Box
-              sx={{
-                p: {
-                  xs: 3,
-                  md: 5,
-                },
-              }}
-            >
-              <Typography
-                sx={{
-                  color: "primary.main",
-                  fontWeight: 900,
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  fontSize: 13,
-                }}
+              <span
+                className={`absolute top-5 left-5 px-3 py-1.5 rounded-full text-xs font-black ${
+                  isOutOfStock
+                    ? "bg-red-100 text-red-700"
+                    : "bg-green-100 text-green-700"
+                }`}
               >
+                {isOutOfStock ? "Out of Stock" : "In Stock"}
+              </span>
+            </div>
+
+            {/* RIGHT — Details */}
+            <div className="p-6 md:p-10 flex flex-col">
+              <span className="text-indigo-600 font-black uppercase tracking-widest text-xs">
                 {product.category}
-              </Typography>
+              </span>
 
-              <Typography
-                variant="h3"
-                sx={{
-                  mt: 1.5,
-                  fontWeight: 900,
-                  lineHeight: 1.2,
-                }}
-              >
+              <h1 className="mt-2 text-3xl md:text-4xl font-black text-slate-800 leading-tight">
                 {product.productName}
-              </Typography>
+              </h1>
 
-              <Typography
-                variant="h4"
-                sx={{
-                  mt: 3,
-                  fontWeight: 900,
-                }}
-              >
+              <p className="mt-4 text-3xl md:text-4xl font-black text-slate-900">
                 ৳{Number(product.price).toLocaleString()}
-              </Typography>
+              </p>
 
-              <Divider sx={{ my: 4 }} />
+              <div className="my-6 h-px bg-slate-100" />
 
-              <Typography
-                sx={{
-                  color: "text.secondary",
-                  lineHeight: 1.9,
-                  fontSize: 15,
-                }}
-              >
+              <p className="text-slate-500 leading-relaxed text-sm">
                 {product.description || "No description available."}
-              </Typography>
+              </p>
 
-              <Divider sx={{ my: 4 }} />
+              <div className="my-6 h-px bg-slate-100" />
 
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Inventory2OutlinedIcon color="primary" />
+              {/* Meta info */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Package size={16} className="text-indigo-600" />
+                  </div>
+                  <span className="font-semibold text-slate-700 text-sm">
+                    Available Quantity:{" "}
+                    <span className="font-black">{product.quantity}</span>
+                  </span>
+                </div>
 
-                  <Typography sx={{ fontWeight: 700 }}>
-                    Available Quantity: {product.quantity}
-                  </Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <StorefrontIcon color="primary" />
-
-                  <Typography sx={{ fontWeight: 700 }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Store size={16} className="text-indigo-600" />
+                  </div>
+                  <span className="font-semibold text-slate-700 text-sm">
                     {product.sellerShop?.shopName || "No Shop"}
-                  </Typography>
-                </Box>
+                  </span>
+                </div>
 
                 {product.sellerShop?.shopAddress && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
-                  >
-                    <LocationOnIcon color="action" />
-
-                    <Typography color="text.secondary">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                      <MapPin size={16} className="text-slate-500" />
+                    </div>
+                    <span className="text-slate-500 text-sm">
                       {product.sellerShop.shopAddress}
-                    </Typography>
-                  </Box>
+                    </span>
+                  </div>
                 )}
-              </Box>
+              </div>
 
-              <Box sx={{ mt: 5 }}>
+              {/* Add to cart — pushed to bottom */}
+              <div className="mt-8 pt-2">
                 <AddToCartButton
+                  productId={product.id}
                   productName={product.productName}
                   quantity={Number(product.quantity)}
-                  productId={0}
                 />
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

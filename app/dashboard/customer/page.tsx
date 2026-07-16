@@ -6,7 +6,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import Pusher from "pusher-js";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import {
   User,
@@ -20,10 +21,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-export default function CustomerDashboard() {
+function CustomerDashboardInner() {
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "cart" | "orders">("overview");
+
+  // 👇 Sync tab from URL (?tab=cart) whenever it changes
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "cart" || tab === "orders" || tab === "overview") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const pusher = new Pusher("8ce8e1219e4b306f5eba", { cluster: "ap2" });
@@ -106,16 +116,14 @@ export default function CustomerDashboard() {
 
   const navItems = [
     { key: "overview", label: "Overview", icon: TrendingUp },
-    { key: "cart",     label: "My Cart",  icon: ShoppingCart },
-    { key: "orders",   label: "Orders",   icon: Package },
+    { key: "cart", label: "My Cart", icon: ShoppingCart },
+    { key: "orders", label: "Orders", icon: Package },
   ] as const;
 
   return (
     <div className="min-h-screen bg-[#f4f6fb]">
-
       {/* ── Sidebar ── */}
       <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex-col z-30 shadow-sm hidden lg:flex">
-        {/* Brand */}
         <div className="px-6 py-6 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -125,7 +133,6 @@ export default function CustomerDashboard() {
           </div>
         </div>
 
-        {/* Avatar */}
         <div className="px-6 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <img
@@ -140,7 +147,6 @@ export default function CustomerDashboard() {
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-4 py-4 flex flex-col gap-1">
           {navItems.map(({ key, label, icon: Icon }) => (
             <button
@@ -170,7 +176,6 @@ export default function CustomerDashboard() {
           </Link>
         </nav>
 
-        {/* Logout */}
         <div className="px-4 py-4 border-t border-slate-100">
           <button
             onClick={handleLogout}
@@ -183,8 +188,6 @@ export default function CustomerDashboard() {
 
       {/* ── Main ── */}
       <div className="lg:pl-64">
-
-        {/* Top Bar */}
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-extrabold text-slate-800">
@@ -196,7 +199,6 @@ export default function CustomerDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mobile tabs */}
             <div className="flex lg:hidden items-center gap-1">
               {navItems.map(({ key, label }) => (
                 <button
@@ -225,19 +227,12 @@ export default function CustomerDashboard() {
           </div>
         </header>
 
-        {/* Page Body */}
         <main className="p-6 max-w-6xl mx-auto">
-
-          {/* ── Cart Tab ── */}
           {activeTab === "cart" && <CartPage />}
-
-          {/* ── Orders Tab ── */}
           {activeTab === "orders" && <RecentOrders />}
 
-          {/* ── Overview Tab ── */}
           {activeTab === "overview" && (
             <>
-              {/* Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 {stats.map((stat) => (
                   <div
@@ -255,49 +250,6 @@ export default function CustomerDashboard() {
                 ))}
               </div>
 
-              {/* Profile Card */}
-              {/* <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                <div className="relative shrink-0">
-                  <img
-                    src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
-                    alt="Profile"
-                    className="w-20 h-20 rounded-2xl object-cover ring-4 ring-indigo-50"
-                  />
-                  <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-white" />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <h2 className="text-2xl font-extrabold text-slate-800">{user?.name}</h2>
-                  <p className="text-slate-400 text-sm mt-1">{user?.email}</p>
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
-                    <Link
-                      href="/dashboard/customer/profile"
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition shadow-md shadow-indigo-200"
-                    >
-                      <User size={14} /> Edit Profile
-                    </Link>
-                    <button
-                      onClick={() => setActiveTab("cart")}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition"
-                    >
-                      <ShoppingCart size={14} /> View Cart
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("orders")}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition"
-                    >
-                      <Package size={14} /> My Orders
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition"
-                    >
-                      <LogOut size={14} /> Logout
-                    </button>
-                  </div>
-                </div>
-              </div> */}
-
-              {/* Recent Orders preview */}
               <RecentOrders />
               <div className="mt-4 flex justify-end">
                 <button
@@ -309,9 +261,17 @@ export default function CustomerDashboard() {
               </div>
             </>
           )}
-
         </main>
       </div>
     </div>
+  );
+}
+
+// useSearchParams requires a Suspense boundary in the App Router
+export default function CustomerDashboard() {
+  return (
+    <Suspense fallback={null}>
+      <CustomerDashboardInner />
+    </Suspense>
   );
 }

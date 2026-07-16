@@ -88,6 +88,8 @@ export default function CartPage() {
       });
       setCartItems((prev) => prev.filter((item) => item.id !== id));
       toast.success("Item removed from cart");
+        window.dispatchEvent(new Event("cartUpdated")); // 👈 add this
+
     } catch (error) {
       console.log(error);
       toast.error("Failed to remove item");
