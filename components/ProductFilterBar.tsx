@@ -1,5 +1,4 @@
 "use client";
-
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import Box from "@mui/material/Box";
@@ -12,7 +11,6 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Typography from "@mui/material/Typography";
 
 import TuneIcon from "@mui/icons-material/Tune";
-
 import type { PriceFilter } from "./ProductGrid";
 
 type ProductFilterBarProps = {

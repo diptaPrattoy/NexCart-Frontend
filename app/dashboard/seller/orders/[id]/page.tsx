@@ -1,11 +1,13 @@
 import OrderDetails from "./OrderDetails";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-export default function Page({ params }: Props) {
-  return <OrderDetails orderId={params.id} />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+
+  return <OrderDetails orderId={id} />;
 }

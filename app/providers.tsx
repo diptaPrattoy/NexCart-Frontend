@@ -7,8 +7,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ToastContainer } from "react-toastify";
 
 import theme from "./theme";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (

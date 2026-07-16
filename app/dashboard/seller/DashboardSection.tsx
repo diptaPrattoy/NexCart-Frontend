@@ -23,17 +23,6 @@ type Props = {
 };
 
 export default function DashboardSection({ statistics, seller }: Props) {
-  // useEffect(() => {
-  //   const pusher = new Pusher(
-  //     "8ce8e1219e4b306f5eba",
-
-  //     {
-  //       cluster: "ap2",
-  //     },
-  //   );
-
-  //   const channel = pusher.subscribe("seller-channel");
-  // });
   return (
     <>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 mb-4">

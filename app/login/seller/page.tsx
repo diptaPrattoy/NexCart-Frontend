@@ -11,19 +11,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Container from "@mui/material/Container";
-import Paper from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
-
-import LoginIcon from "@mui/icons-material/Login";
+import { LogIn } from "lucide-react";
 
 const sellerLoginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
-
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -79,10 +70,6 @@ export default function SellerLoginPage() {
         sameSite: "strict",
       });
 
-      /**
-       * Use this if your backend returns:
-       * { seller: {...} }
-       */
       if (response.data?.seller) {
         Cookies.set("seller", JSON.stringify(response.data.seller), {
           expires: 1,
@@ -90,10 +77,6 @@ export default function SellerLoginPage() {
         });
       }
 
-      /**
-       * Use this if your backend returns:
-       * { data: {...} }
-       */
       if (response.data?.data) {
         Cookies.set("seller", JSON.stringify(response.data.data), {
           expires: 1,
@@ -105,7 +88,7 @@ export default function SellerLoginPage() {
 
       setTimeout(() => {
         router.push("/dashboard/seller/");
-      }, 1000);
+      }, 800);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
@@ -124,133 +107,80 @@ export default function SellerLoginPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#f3f4f6",
-        display: "flex",
-        alignItems: "center",
-        py: 6,
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 3, sm: 5 },
-            borderRadius: 2,
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 25px 70px rgba(15, 23, 42, 0.1)",
-          }}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+        {/* HEADER */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-green-600 text-white flex items-center justify-center">
+            <LogIn size={30} />
+          </div>
+
+          <h1 className="text-3xl font-black text-gray-900">Seller Login</h1>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Access your NexCart seller account
+          </p>
+        </div>
+
+        {/* FORM */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
         >
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Box
-              sx={{
-                width: 64,
-                height: 64,
-                mx: "auto",
-                mb: 2,
-                borderRadius: 2,
-                bgcolor: "primary.main",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <LoginIcon fontSize="large" />
-            </Box>
-
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 900,
-                color: "text.primary",
-                letterSpacing: "-0.8px",
-              }}
-            >
-              Seller Login
-            </Typography>
-
-            <Typography sx={{ mt: 1, color: "text.secondary" }}>
-              Access your NexCart seller account
-            </Typography>
-          </Box>
-
-          <Box
-            component="form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleSubmit(onSubmit)(event);
-            }}
-            noValidate
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2.5,
-            }}
-          >
-            <TextField
-              label="Email"
+          {/* EMAIL */}
+          <div>
+            <input
+              type="email"
               placeholder="Enter your email"
-              fullWidth
               {...register("email")}
-              error={Boolean(errors.email)}
-              helperText={errors.email?.message}
+              className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-green-500"
             />
 
-            <TextField
-              label="Password"
-              placeholder="Enter your password"
+            {errors.email && (
+              <p className="text-sm text-red-500 mt-1">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          {/* PASSWORD */}
+          <div>
+            <input
               type="password"
-              fullWidth
+              placeholder="Enter your password"
               {...register("password")}
-              error={Boolean(errors.password)}
-              helperText={errors.password?.message}
+              className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-green-500"
             />
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                mt: 1,
-                py: 1.6,
-                fontSize: 16,
-                fontWeight: 800,
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={24} sx={{ color: "white" }} />
-              ) : (
-                "Login"
-              )}
-            </Button>
-          </Box>
+            {errors.password && (
+              <p className="text-sm text-red-500 mt-1">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
 
-          <Typography
-            sx={{
-              mt: 3,
-              textAlign: "center",
-              color: "text.secondary",
-              fontSize: 14,
-            }}
+          {/* BUTTON */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition disabled:opacity-60"
           >
-            Do not have a seller account?{" "}
-            <Typography
-              component={Link}
-              href="/register/seller"
-              sx={{
-                color: "primary.main",
-                textDecoration: "none",
-                fontWeight: 800,
-              }}
-            >
-              Register
-            </Typography>
-          </Typography>
-        </Paper>
-      </Container>
-    </Box>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        {/* FOOTER */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Don’t have a seller account?{" "}
+          <Link
+            href="/register/seller"
+            className="text-green-600 font-bold hover:underline"
+          >
+            Register
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

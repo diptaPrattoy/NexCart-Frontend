@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Plus,
-  Upload,
-  Package,
-} from "lucide-react";
+import { Plus, Upload, Package } from "lucide-react";
 
 import ProductCard from "./ProductCard";
 
@@ -68,10 +64,7 @@ export default function ProductsSection({
           {editingProductId ? "Edit Product" : "New Product"}
         </h2>
 
-        <form
-          onSubmit={handleSubmitProduct}
-          className="flex flex-col gap-3.5"
-        >
+        <form onSubmit={handleSubmitProduct} className="flex flex-col gap-3.5">
           <div>
             <label className={labelCls}>Product Name</label>
 
@@ -128,6 +121,7 @@ export default function ProductsSection({
               <input
                 className={inputCls}
                 type="number"
+                min="0"
                 name="price"
                 placeholder="0.00"
                 value={form.price}
@@ -142,6 +136,7 @@ export default function ProductsSection({
                 className={inputCls}
                 type="number"
                 name="quantity"
+                min="0"
                 placeholder="0"
                 value={form.quantity}
                 onChange={handleChange}
@@ -156,9 +151,7 @@ export default function ProductsSection({
             />
 
             <span className="text-[13px] font-medium text-gray-500">
-              {productImage
-                ? productImage.name
-                : "Upload Product Image"}
+              {productImage ? productImage.name : "Upload Product Image"}
             </span>
 
             <span className="text-[11px] text-gray-400">
@@ -169,9 +162,7 @@ export default function ProductsSection({
               hidden
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                setProductImage(e.target.files?.[0] || null)
-              }
+              onChange={(e) => setProductImage(e.target.files?.[0] || null)}
             />
           </label>
 
@@ -227,9 +218,7 @@ export default function ProductsSection({
               <Package size={28} />
             </div>
 
-            <p className="text-lg font-bold text-gray-800">
-              No Products Yet
-            </p>
+            <p className="text-lg font-bold text-gray-800">No Products Yet</p>
 
             <p className="text-sm text-gray-400">
               Create your first product using the form.

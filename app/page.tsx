@@ -1,5 +1,5 @@
-import Hero from "@/components/Hero";
-import ProductGrid, { PriceFilter } from "@/components/ProductGrid";
+import Hero from "../components/Hero";
+import ProductGrid, { PriceFilter } from "../components/ProductGrid";
 
 type HomePageProps = {
   searchParams: Promise<{
