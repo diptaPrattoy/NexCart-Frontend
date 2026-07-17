@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -26,13 +27,13 @@ export default function Header() {
 
     try {
       const payload = JSON.parse(
-        atob(currentToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+        atob(currentToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
       );
       const customerId = payload.sub;
 
       const res = await axios.get(
         `https://nexcart-backend-o86x.onrender.com/customer/cart/${customerId}`,
-        { headers: { Authorization: `Bearer ${currentToken}` } }
+        { headers: { Authorization: `Bearer ${currentToken}` } },
       );
 
       setCartCount(res.data.length);
@@ -80,7 +81,6 @@ export default function Header() {
   const goToDashboard = () => {
     const path = role ? `/dashboard/${role}` : "/dashboard";
     router.push(path);
-
   };
 
   return (
@@ -88,7 +88,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <div className="w-11 h-11 rounded-xl bg-green-600 text-white flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
               <ShoppingBag size={22} />
             </div>
             <span className="text-2xl font-black text-slate-800 tracking-tight">
@@ -128,7 +128,7 @@ export default function Header() {
               <>
                 {role === "customer" && cartCount > 0 && (
                   <Link
-                    href="dashboard/customer/?tab=cart"
+                    href="/dashboard/customer?tab=cart"
                     className="relative px-4 py-2 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors"
                   >
                     🛒 Cart
@@ -145,7 +145,7 @@ export default function Header() {
                   <LayoutDashboard size={15} />
                   Dashboard
                   {role && (
-                    <span className="ml-auto text-xs bg-indigo-100 text-green-600 font-bold px-2 py-0.5 rounded-md capitalize">
+                    <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 font-bold px-2 py-0.5 rounded-md capitalize">
                       {role}
                     </span>
                   )}
@@ -165,4 +165,3 @@ export default function Header() {
     </header>
   );
 }
-  
