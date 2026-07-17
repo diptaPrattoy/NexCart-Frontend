@@ -22,7 +22,7 @@ import ProductsSection from "./ProductsSection";
 import OrdersSection from "./OrdersSection";
 import ProfileSection from "./ProfileSection";
 
-export const API_BASE_URL = "http://localhost:3000";
+export const API_BASE_URL = "https://nexcart-backend-o86x.onrender.com";
 
 export const PRODUCT_CATEGORIES = [
   "Electronics",

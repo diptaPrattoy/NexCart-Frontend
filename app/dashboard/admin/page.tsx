@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
       if (!token) return;
       const payload = JSON.parse(atob(token.split(".")[1]));
       const res = await axios.get(
-        `http://localhost:3000/admin/${payload.sub}`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${payload.sub}`,
         authHeader(),
       );
       setProfile(res.data);
@@ -87,11 +87,11 @@ export default function AdminDashboardPage() {
       // Fetch in parallel
       const [ordersRes, sellersRes, ridersRes] = await Promise.allSettled([
         axios.get(
-          "http://localhost:3000/customer/orders-details",
+          "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
           authHeader(),
         ),
-        axios.get("http://localhost:3000/seller", authHeader()),
-        axios.get("http://localhost:3000/riders/available"),
+        axios.get("https://nexcart-backend-o86x.onrender.com/seller", authHeader()),
+        axios.get("https://nexcart-backend-o86x.onrender.com/riders/available"),
       ]);
 
       // Total orders
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
       }
 
       await axios.patch(
-        `http://localhost:3000/admin/${profile.id}`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${profile.id}`,
         updateData,
         authHeader(),
       );

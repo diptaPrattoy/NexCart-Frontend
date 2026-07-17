@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://nexcart-backend-o86x.onrender.com";
 
 export default function OrderDetails({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<any>(null);

@@ -53,7 +53,7 @@ export default function SellersPage() {
   const fetchSellers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:3000/seller", authHeader());
+      const res = await axios.get("https://nexcart-backend-o86x.onrender.com/seller", authHeader());
       // Backend returns { message, data: [...] }
       const raw = res.data?.data ?? [];
       setSellers(
@@ -80,7 +80,7 @@ export default function SellersPage() {
     if (!confirm("Delete this seller?")) return;
     try {
       setDeletingId(id);
-      await axios.delete(`http://localhost:3000/seller/${id}`, authHeader());
+      await axios.delete(`https://nexcart-backend-o86x.onrender.com/seller/${id}`, authHeader());
       toast.success("Seller deleted");
       setSellers((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {

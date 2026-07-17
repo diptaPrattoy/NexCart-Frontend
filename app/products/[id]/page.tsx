@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ShoppingCart, Store, MapPin, Package } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://nexcart-backend-o86x.onrender.com";
 
 type SellerShop = {
   id: number;

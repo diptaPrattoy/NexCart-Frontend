@@ -46,7 +46,7 @@ export default function SellerLoginPage() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:3000/seller/login",
+        "https://nexcart-backend-o86x.onrender.com/seller/login",
         data,
       );
 

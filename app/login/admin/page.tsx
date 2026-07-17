@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
 
       // Axios API call
       const response = await axios.post(
-        "http://localhost:3000/admin/login",
+        "https://nexcart-backend-o86x.onrender.com/admin/login",
         data,
       );
 

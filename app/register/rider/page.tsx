@@ -111,7 +111,7 @@ export default function RiderRegisterPage() {
 
       // API CALL
       const response = await axios.post(
-        "http://localhost:3000/riders/createRider",
+        "https://nexcart-backend-o86x.onrender.com/riders/createRider",
         formData
       );
 

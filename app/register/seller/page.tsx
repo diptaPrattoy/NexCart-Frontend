@@ -105,7 +105,7 @@
 
 //       formData.append("nidImage", data.nidImage[0]);
 //       const response = await axios.post(
-//         "http://localhost:3000/seller",
+//         "https://nexcart-backend-o86x.onrender.com/seller",
 //         formData,
 //       );
 
@@ -463,7 +463,7 @@ export default function SellerRegisterPage() {
       formData.append("nidImage", data.nidImage[0]);
 
       const response = await axios.post(
-        "http://localhost:3000/seller",
+        "https://nexcart-backend-o86x.onrender.com/seller",
         formData,
       );
 

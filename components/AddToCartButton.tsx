@@ -36,7 +36,7 @@ export default function AddToCartButton({
 
       // API
       await axios.post(
-        `http://localhost:3000/customer/cart/${customerId}/${productId}`,
+        `https://nexcart-backend-o86x.onrender.com/customer/cart/${customerId}/${productId}`,
         {},
         {
           headers: {

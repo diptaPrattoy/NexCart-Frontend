@@ -33,7 +33,7 @@ export default function CustomersPage() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://localhost:3000/customer/orders-details",
+        "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
         authHeader(),
       );
       const orders = Array.isArray(res.data) ? res.data : [];

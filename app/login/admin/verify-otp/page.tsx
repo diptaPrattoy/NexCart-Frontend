@@ -76,7 +76,7 @@ export default function AdminVerifyOtpPage() {
     try {
       setLoading(true);
 
-      await axios.post("http://localhost:3000/admin/verify-otp", {
+      await axios.post("https://nexcart-backend-o86x.onrender.com/admin/verify-otp", {
         email,
         otp: otpCode,
       });
@@ -100,7 +100,7 @@ export default function AdminVerifyOtpPage() {
     try {
       setResendLoading(true);
 
-      await axios.post("http://localhost:3000/admin/resend-otp");
+      await axios.post("https://nexcart-backend-o86x.onrender.com/admin/resend-otp");
 
       toast.success("OTP sent to your registered email");
       setOtp(Array(OTP_LENGTH).fill(""));

@@ -49,7 +49,7 @@ interface Seller {
 // SERVER-SIDE DATA FETCH
 async function getSellerById(id: string, token: string): Promise<Seller | null> {
     try {
-        const res = await fetch(`http://localhost:3000/seller/${id}`, {
+        const res = await fetch(`https://nexcart-backend-o86x.onrender.com/seller/${id}`, {
             cache: "no-store",
             headers: {
                 Authorization: `Bearer ${token}`, //  pass token in header
