@@ -113,13 +113,13 @@ export default function Header() {
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:border-green-600 hover:text-green-600 transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors"
                 >
                   Register
                 </Link>
