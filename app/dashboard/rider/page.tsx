@@ -38,7 +38,7 @@ const RiderDashboard = () => {
     riderId = decoded.sub;
   }
 
-  const API = "http://localhost:3000/riders";
+  const API = "https://nexcart-backend-o86x.onrender.com/riders";
 
   // =========================================
   // AUTH CHECK
@@ -70,7 +70,7 @@ const RiderDashboard = () => {
       // IMAGE PREVIEW
       if (riderRes.data?.profileImage) {
         setPreviewImage(
-          `http://localhost:3000/uploads/riders/${riderRes.data.profileImage}`,
+          `https://nexcart-backend-o86x.onrender.com/uploads/riders/${riderRes.data.profileImage}`,
         );
       }
 

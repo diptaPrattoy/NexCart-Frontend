@@ -59,7 +59,7 @@ export default function CustomerRegisterPage() {
 
       // Backend API Call
       const res = await axios.post(
-        "http://localhost:3000/customer/register",
+        "https://nexcart-backend-o86x.onrender.com/customer/register",
         {
           name: formData.name,
           email: formData.email,

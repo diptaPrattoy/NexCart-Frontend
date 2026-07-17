@@ -31,7 +31,7 @@ export default function Header() {
       const customerId = payload.sub;
 
       const res = await axios.get(
-        `http://localhost:3000/customer/cart/${customerId}`,
+        `https://nexcart-backend-o86x.onrender.com/customer/cart/${customerId}`,
         { headers: { Authorization: `Bearer ${currentToken}` } }
       );
 
