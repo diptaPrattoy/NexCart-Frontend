@@ -37,7 +37,7 @@ export type Product = {
 
 export type PriceFilter = "default" | "lowToHigh" | "highToLow";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://nexcart-backend-o86x.onrender.com";
 
 const PRODUCT_CATEGORIES = [
   "Electronics",

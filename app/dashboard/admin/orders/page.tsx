@@ -66,7 +66,7 @@ export default function OrdersPage() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "http://localhost:3000/customer/orders-details",
+        "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
         authHeader(),
       );
       const all = Array.isArray(res.data) ? res.data : [];
@@ -89,7 +89,7 @@ export default function OrdersPage() {
 
   const fetchAvailableRiders = useCallback(async () => {
     try {
-      const res = await axios.get("http://localhost:3000/riders/available", authHeader());
+      const res = await axios.get("https://nexcart-backend-o86x.onrender.com/riders/available", authHeader());
       setAvailableRiders(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -135,7 +135,7 @@ export default function OrdersPage() {
     try {
       setAssigningOrderId(orderId);
       await axios.patch(
-        `http://localhost:3000/admin/orders/${orderId}/rider`,
+        `https://nexcart-backend-o86x.onrender.com/admin/orders/${orderId}/rider`,
         { riderId },
         authHeader(),
       );

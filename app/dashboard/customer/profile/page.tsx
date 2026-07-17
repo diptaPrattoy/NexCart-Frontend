@@ -32,7 +32,7 @@ export default function CustomerProfilePage() {
     }
 
     axios
-      .get("http://localhost:3000/customer/profile", {
+      .get("https://nexcart-backend-o86x.onrender.com/customer/profile", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -63,7 +63,7 @@ export default function CustomerProfilePage() {
       if (profilePic) fd.append("profilePic", profilePic);
 
       const res = await axios.put(
-        `http://localhost:3000/customer/profile/${user.id}`,
+        `https://nexcart-backend-o86x.onrender.com/customer/profile/${user.id}`,
         fd,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -85,7 +85,7 @@ export default function CustomerProfilePage() {
   const avatarSrc =
     preview ||
     (user?.profilePic
-      ? `http://localhost:3000/uploads/profile/${user.profilePic}?t=${Date.now()}`
+      ? `https://nexcart-backend-o86x.onrender.com/uploads/profile/${user.profilePic}?t=${Date.now()}`
       : null);
 
   const initials = user?.name

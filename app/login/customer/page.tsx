@@ -38,7 +38,7 @@ export default function CustomerLoginPage() {
 
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:3000/customer/login", {
+      const res = await axios.post("https://nexcart-backend-o86x.onrender.com/customer/login", {
         email: formData.email,
         password: formData.password,
       });

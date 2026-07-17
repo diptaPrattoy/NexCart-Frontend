@@ -32,7 +32,7 @@ export default function RecentOrders() {
         const customerId = payload.sub;
 
         const res = await axios.get(
-          `http://localhost:3000/customer/my-orders/${customerId}`,
+          `https://nexcart-backend-o86x.onrender.com/customer/my-orders/${customerId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -127,7 +127,7 @@ export default function RecentOrders() {
                       <img
                         src={
                           order.orderItems?.[0]?.product?.productImage
-                            ? `http://localhost:3000/uploads/products/${order.orderItems[0].product.productImage}`
+                            ? `https://nexcart-backend-o86x.onrender.com/uploads/products/${order.orderItems[0].product.productImage}`
                             : "/no-image.png"
                         }
                         alt="Product"

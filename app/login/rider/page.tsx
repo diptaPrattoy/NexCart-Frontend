@@ -60,7 +60,7 @@ export default function RiderLoginPage() {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost:3000/riders/login",
+        "https://nexcart-backend-o86x.onrender.com/riders/login",
         {
           email: formData.email,
           password: formData.password,

@@ -33,7 +33,7 @@ export default function CartPage() {
       const customerId = payload.sub;
 
       const res = await axios.post(
-        `http://localhost:3000/customer/orders/${customerId}`,
+        `https://nexcart-backend-o86x.onrender.com/customer/orders/${customerId}`,
         { paymentMethod },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -64,7 +64,7 @@ export default function CartPage() {
         const customerId = payload.sub;
 
         const res = await axios.get(
-          `http://localhost:3000/customer/cart/${customerId}`,
+          `https://nexcart-backend-o86x.onrender.com/customer/cart/${customerId}`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
 
@@ -83,7 +83,7 @@ export default function CartPage() {
   const handleRemove = async (id: number) => {
     try {
       const token = Cookies.get("token");
-      await axios.delete(`http://localhost:3000/customer/cart/${id}`, {
+      await axios.delete(`https://nexcart-backend-o86x.onrender.com/customer/cart/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCartItems((prev) => prev.filter((item) => item.id !== id));
@@ -104,7 +104,7 @@ export default function CartPage() {
       if (newQuantity < 1) return;
 
       await axios.patch(
-        `http://localhost:3000/customer/cart/${id}`,
+        `https://nexcart-backend-o86x.onrender.com/customer/cart/${id}`,
         { quantity: newQuantity },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -193,7 +193,7 @@ export default function CartPage() {
                     <img
                       src={
                         item.product?.productImage
-                          ? `http://localhost:3000/uploads/products/${item.product.productImage}`
+                          ? `https://nexcart-backend-o86x.onrender.com/uploads/products/${item.product.productImage}`
                           : "/no-image.png"
                       }
                       alt={item.product?.productName}

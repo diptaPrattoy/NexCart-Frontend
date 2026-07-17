@@ -67,14 +67,14 @@ function CustomerDashboardInner() {
     const payload = JSON.parse(atob(token.split(".")[1]));
 
     axios
-      .get("http://localhost:3000/customer/profile", {
+      .get("https://nexcart-backend-o86x.onrender.com/customer/profile", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUser(res.data))
       .catch(console.log);
 
     axios
-      .get(`http://localhost:3000/customer/my-orders/${payload.sub}`, {
+      .get(`https://nexcart-backend-o86x.onrender.com/customer/my-orders/${payload.sub}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setOrders(res.data))
@@ -136,7 +136,7 @@ function CustomerDashboardInner() {
         <div className="px-6 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <img
-              src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
+              src={user?.profilePic ? `https://nexcart-backend-o86x.onrender.com/uploads/profile/${user.profilePic}` : "/no-image.png"}
               alt="Profile"
               className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100"
             />
@@ -220,7 +220,7 @@ function CustomerDashboardInner() {
             </button>
 
             <img
-              src={user?.profilePic ? `http://localhost:3000/uploads/profile/${user.profilePic}` : "/no-image.png"}
+              src={user?.profilePic ? `https://nexcart-backend-o86x.onrender.com/uploads/profile/${user.profilePic}` : "/no-image.png"}
               alt="Profile"
               className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-100"
             />
