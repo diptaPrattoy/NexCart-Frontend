@@ -47,7 +47,7 @@ export default function OrdersPage() {
         const customerId = payload.sub;
 
         const res = await axios.get(
-          `http://localhost:3000/customer/my-orders/${customerId}`,
+          `https://nexcart-backend-o86x.onrender.com/customer/my-orders/${customerId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setOrders(res.data);
@@ -234,7 +234,7 @@ export default function OrdersPage() {
                             <img
                               src={
                                 item.product?.productImage
-                                  ? `http://localhost:3000/uploads/products/${item.product.productImage}`
+                                  ? `https://nexcart-backend-o86x.onrender.com/uploads/products/${item.product.productImage}`
                                   : "/no-image.png"
                               }
                               alt={item.product?.productName}

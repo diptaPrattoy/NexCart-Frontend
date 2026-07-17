@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://nexcart-backend-o86x.onrender.com";
 
 type Props = {
   orders: any[];

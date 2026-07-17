@@ -52,7 +52,7 @@ export default function AdminsPage() {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:3000/admin", authHeader());
+      const res = await axios.get("https://nexcart-backend-o86x.onrender.com/admin", authHeader());
       const data = Array.isArray(res.data) ? res.data : [];
 
       // Always sort by ID ascending — oldest first, stable order
@@ -74,7 +74,7 @@ export default function AdminsPage() {
     try {
       setActionId(id);
       await axios.patch(
-        `http://localhost:3000/admin/${id}/approve`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${id}/approve`,
         {},
         authHeader(),
       );
@@ -110,7 +110,7 @@ export default function AdminsPage() {
     try {
       setActionId(id);
       await axios.patch(
-        `http://localhost:3000/admin/${id}/deny`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${id}/deny`,
         {},
         authHeader(),
       );
@@ -132,7 +132,7 @@ export default function AdminsPage() {
     try {
       setActionId(id);
       await axios.patch(
-        `http://localhost:3000/admin/${id}/deactivate`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${id}/deactivate`,
         {},
         authHeader(),
       );
@@ -154,7 +154,7 @@ export default function AdminsPage() {
     try {
       setActionId(id);
       await axios.patch(
-        `http://localhost:3000/admin/${id}/activate`,
+        `https://nexcart-backend-o86x.onrender.com/admin/${id}/activate`,
         {},
         authHeader(),
       );
