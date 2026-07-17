@@ -43,7 +43,7 @@ export default function Hero() {
         >
           {/* Left Section */}
           <Box>
-            <Chip
+            {/* <Chip
               label="Smart Ecommerce Platform for Everyone"
               sx={{
                 mb: 3,
@@ -53,7 +53,7 @@ export default function Hero() {
                 border: "1px solid #bbf7d0",
                 px: 1,
               }}
-            />
+            /> */}
 
             <Typography
               variant="h1"

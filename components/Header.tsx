@@ -1,6 +1,4 @@
 "use client";
-// "use client";
-
 import Link from "next/link";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -90,7 +88,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           <Link href="/" className="flex items-center gap-2.5 no-underline">
-            <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl bg-green-600 text-white flex items-center justify-center">
               <ShoppingBag size={22} />
             </div>
             <span className="text-2xl font-black text-slate-800 tracking-tight">
@@ -147,7 +145,7 @@ export default function Header() {
                   <LayoutDashboard size={15} />
                   Dashboard
                   {role && (
-                    <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 font-bold px-2 py-0.5 rounded-md capitalize">
+                    <span className="ml-auto text-xs bg-indigo-100 text-green-600 font-bold px-2 py-0.5 rounded-md capitalize">
                       {role}
                     </span>
                   )}
@@ -167,3 +165,4 @@ export default function Header() {
     </header>
   );
 }
+  
