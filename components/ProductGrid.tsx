@@ -440,7 +440,6 @@ function ProductCard({ product }: { product: Product }) {
             overflow: "hidden",
           }}
         >
-
           {product.description || "No description available."}
         </Typography>
 
@@ -453,6 +452,27 @@ function ProductCard({ product }: { product: Product }) {
             gap: 2,
           }}
         >
+          <Box>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              Quantity
+            </Typography>
+
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 900,
+                color: "text.primary",
+              }}
+            >
+              {Number(product.quantity).toLocaleString()}
+            </Typography>
+          </Box>
           <Box>
             <Typography
               sx={{
@@ -481,7 +501,7 @@ function ProductCard({ product }: { product: Product }) {
           >
             <Button
               variant="outlined"
-              size="small"
+              size="medium"
               startIcon={<VisibilityIcon />}
               sx={{
                 borderColor: "#d1d5db",
