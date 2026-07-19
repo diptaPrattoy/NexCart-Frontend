@@ -20,34 +20,42 @@ export default function CartPage() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [checkingOut, setCheckingOut] = useState(false);
 
-  const handleCheckout = async () => {
-    try {
-      setCheckingOut(true);
-      const token = Cookies.get("token");
-      if (!token) {
-        toast.error("Please login");
-        return;
-      }
-
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const customerId = payload.sub;
-
-      const res = await axios.post(
-        `https://nexcart-backend-o86x.onrender.com/customer/orders/${customerId}`,
-        { paymentMethod },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      console.log(res.data);
-      toast.success("Order placed successfully 🎉");
-      setCartItems([]);
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response?.data?.message || "Checkout failed");
-    } finally {
-      setCheckingOut(false);
+ const handleCheckout = async () => {
+  try {
+    setCheckingOut(true);
+    const token = Cookies.get("token");
+    if (!token) {
+      toast.error("Please login");
+      return;
     }
-  };
+
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const customerId = payload.sub;
+
+    const res = await axios.post(
+      `https://nexcart-backend-o86x.onrender.com/customer/orders/${customerId}`,
+      { paymentMethod },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    console.log(res.data);
+
+    // If backend returned a payment gateway URL, redirect there instead of showing success
+    if (res.data.paymentUrl) {
+      toast.info("Redirecting to payment gateway...");
+      window.location.href = res.data.paymentUrl;
+      return;
+    }
+
+    toast.success("Order placed successfully 🎉");
+    setCartItems([]);
+  } catch (error: any) {
+    console.log(error);
+    toast.error(error.response?.data?.message || "Checkout failed");
+  } finally {
+    setCheckingOut(false);
+  }
+};
 
   useEffect(() => {
     const fetchCart = async () => {
