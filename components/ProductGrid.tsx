@@ -79,7 +79,9 @@ export default async function ProductGrid({
     );
   }
 
-  if (priceFilter === "highToLow") {
+  if (priceFilter === "lowToHigh") {
+    filteredProducts.sort((a, b) => Number(a.price) - Number(b.price));
+  } else if (priceFilter === "highToLow") {
     filteredProducts.sort((a, b) => Number(b.price) - Number(a.price));
   }
 
