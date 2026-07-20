@@ -63,15 +63,37 @@ async function getProducts(): Promise<Product[]> {
 type ProductGridProps = {
   selectedCategory?: string;
   priceFilter?: PriceFilter;
+  searchQuery?: string;
 };
 
 export default async function ProductGrid({
   selectedCategory = "all",
   priceFilter = "default",
+  searchQuery = "",
 }: ProductGridProps) {
   const products = await getProducts();
 
   let filteredProducts = [...products];
+
+  const query = searchQuery.trim().toLowerCase();
+
+  if (query) {
+    filteredProducts = filteredProducts.filter((product) => {
+      const productName = product.productName?.toLowerCase() || "";
+      const category = product.category?.toLowerCase() || "";
+      const description = product.description?.toLowerCase() || "";
+      const shopName = product.sellerShop?.shopName?.toLowerCase() || "";
+      const shopAddress = product.sellerShop?.shopAddress?.toLowerCase() || "";
+
+      return (
+        productName.includes(query) ||
+        category.includes(query) ||
+        description.includes(query) ||
+        shopName.includes(query) ||
+        shopAddress.includes(query)
+      );
+    });
+  }
 
   if (selectedCategory !== "all") {
     filteredProducts = filteredProducts.filter(
@@ -180,7 +202,7 @@ export default async function ProductGrid({
             priceFilter={priceFilter}
           />
         </Suspense>
-        
+
         {products.length > 0 && (
           <Typography
             sx={{
@@ -191,6 +213,7 @@ export default async function ProductGrid({
             }}
           >
             Showing {filteredProducts.length} of {products.length} products
+            {query && ` for "${searchQuery}"`}
           </Typography>
         )}
 
