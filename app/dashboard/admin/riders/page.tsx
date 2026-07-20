@@ -31,7 +31,7 @@ export default function RidersPage() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://nexcart-backend-o86x.onrender.com/riders/all-riders",
+        "https://nexcart-backend-o86x.onrender.com/admin/riders",
         authHeader(),
       );
       const data = Array.isArray(res.data) ? res.data : [];
@@ -56,7 +56,7 @@ export default function RidersPage() {
   const handleDelete = async (id: number) => {
     try {
       setDeletingId(id);
-      await axios.delete(`https://nexcart-backend-o86x.onrender.com/riders/${id}`, authHeader());
+      await axios.delete(`https://nexcart-backend-o86x.onrender.com/admin/riders/${id}`, authHeader());
       toast.success("Rider deleted");
       setRiders((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {

@@ -33,7 +33,7 @@ export default function CustomersPage() {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
+        "https://nexcart-backend-o86x.onrender.com/admin/orders",
         authHeader(),
       );
       const orders = Array.isArray(res.data) ? res.data : [];
@@ -86,7 +86,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }; 
+  };
 
   useEffect(() => {
     fetchCustomers();

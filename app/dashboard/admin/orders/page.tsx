@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import {
-  Loader2, Package, CheckCircle, Bike, RefreshCw, Clock,
+  Loader2,
+  Package,
+  CheckCircle,
+  Bike,
+  RefreshCw,
+  Clock,
   XCircle,
 } from "lucide-react";
 // import toast from "react-hot-toast";
@@ -60,20 +65,29 @@ export default function OrdersPage() {
   const [availableRiders, setAvailableRiders] = useState<Rider[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningOrderId, setAssigningOrderId] = useState<number | null>(null);
-  const [selectedRider, setSelectedRider] = useState<Record<number, number>>({});
+  const [selectedRider, setSelectedRider] = useState<Record<number, number>>(
+    {},
+  );
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
+        "https://nexcart-backend-o86x.onrender.com/admin/orders",
         authHeader(),
       );
       const all = Array.isArray(res.data) ? res.data : [];
 
       // Admin only sees seller-processed orders
       const adminVisible = all.filter((o) =>
-        ["accepted", "partial", "rider_assigned", "out_for_delivery", "delivered", "cancelled"].includes(o.status)
+        [
+          "accepted",
+          "partial",
+          "rider_assigned",
+          "out_for_delivery",
+          "delivered",
+          "cancelled",
+        ].includes(o.status),
       );
       setOrders(adminVisible);
     } catch (err) {
@@ -89,7 +103,10 @@ export default function OrdersPage() {
 
   const fetchAvailableRiders = useCallback(async () => {
     try {
-      const res = await axios.get("https://nexcart-backend-o86x.onrender.com/riders/available", authHeader());
+      const res = await axios.get(
+        "https://nexcart-backend-o86x.onrender.com/admin/riders/available",
+        authHeader(),
+      );
       setAvailableRiders(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -154,13 +171,14 @@ export default function OrdersPage() {
   };
 
   // Stats
-  const readyCount = orders.filter((o) =>
-    ["accepted", "partial"].includes(o.status) && !o.rider
+  const readyCount = orders.filter(
+    (o) => ["accepted", "partial"].includes(o.status) && !o.rider,
   ).length;
 
-  const assignedCount = orders.filter((o) =>
-    o.status === "rider_assigned" ||
-    (["accepted", "partial"].includes(o.status) && !!o.rider)
+  const assignedCount = orders.filter(
+    (o) =>
+      o.status === "rider_assigned" ||
+      (["accepted", "partial"].includes(o.status) && !!o.rider),
   ).length;
 
   const deliveredCount = orders.filter((o) => o.status === "delivered").length;
@@ -248,12 +266,13 @@ export default function OrdersPage() {
             .map((order) => (
               <div
                 key={order.id}
-                className={`rounded-2xl border bg-white p-6 shadow-sm ${order.status === "cancelled"
+                className={`rounded-2xl border bg-white p-6 shadow-sm ${
+                  order.status === "cancelled"
                     ? "border-red-100"
                     : order.status === "delivered"
                       ? "border-green-100"
                       : "border-[#e0d9cc]"
-                  }`}
+                }`}
               >
                 {/* Order header */}
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -263,16 +282,24 @@ export default function OrdersPage() {
                     </span>
                     {/* Status badge with label */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-[#7a8a6a] font-medium">Status:</span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${STATUS_STYLES[order.status] ?? "bg-gray-100 text-gray-600"}`}>
+                      <span className="text-xs text-[#7a8a6a] font-medium">
+                        Status:
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${STATUS_STYLES[order.status] ?? "bg-gray-100 text-gray-600"}`}
+                      >
                         {order.status.replace(/_/g, " ")}
                       </span>
                     </div>
 
                     {/* Payment badge with label */}
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-[#7a8a6a] font-medium">Payment:</span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${PAYMENT_STYLES[order.paymentMethod] ?? "bg-gray-100 text-gray-600"}`}>
+                      <span className="text-xs text-[#7a8a6a] font-medium">
+                        Payment:
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${PAYMENT_STYLES[order.paymentMethod] ?? "bg-gray-100 text-gray-600"}`}
+                      >
                         {order.paymentMethod}
                       </span>
                     </div>
@@ -331,9 +358,7 @@ export default function OrdersPage() {
                       Rider
                     </p>
                     {order.status === "cancelled" ? (
-                      <p className="text-sm text-red-400">
-                        Order cancelled
-                      </p>
+                      <p className="text-sm text-red-400">Order cancelled</p>
                     ) : order.status === "delivered" ? (
                       <div>
                         <p className="font-semibold text-[#4a7c59]">

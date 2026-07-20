@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  //  Fetch profile 
+  //  Fetch profile
   const fetchProfile = async () => {
     try {
       setLoadingProfile(true);
@@ -79,19 +79,33 @@ export default function AdminDashboardPage() {
     }
   };
 
-  //  Fetch dashboard stats from real backend 
+  //  Fetch dashboard stats from real backend
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
 
       // Fetch in parallel
+      // const [ordersRes, sellersRes, ridersRes] = await Promise.allSettled([
+      //   axios.get(
+      //     "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
+      //     authHeader(),
+      //   ),
+      //   axios.get("https://nexcart-backend-o86x.onrender.com/seller", authHeader()),
+      //   axios.get("https://nexcart-backend-o86x.onrender.com/riders/available"),authHeader(),
+      // ]);
       const [ordersRes, sellersRes, ridersRes] = await Promise.allSettled([
         axios.get(
-          "https://nexcart-backend-o86x.onrender.com/customer/orders-details",
+          "https://nexcart-backend-o86x.onrender.com/admin/orders",
           authHeader(),
         ),
-        axios.get("https://nexcart-backend-o86x.onrender.com/seller", authHeader()),
-        axios.get("https://nexcart-backend-o86x.onrender.com/riders/available"),
+        axios.get(
+          "https://nexcart-backend-o86x.onrender.com/admin/sellers",
+          authHeader(),
+        ),
+        axios.get(
+          "https://nexcart-backend-o86x.onrender.com/admin/riders/available",
+          authHeader(),
+        ),
       ]);
 
       // Total orders
@@ -148,7 +162,7 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  //  Update own profile (PATCH) 
+  //  Update own profile (PATCH)
   const handleUpdateProfile = async () => {
     if (!profile) return;
     try {
@@ -190,7 +204,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  //  Stat card config 
+  //  Stat card config
   const statCards = [
     {
       label: "Total Orders",
@@ -285,14 +299,14 @@ export default function AdminDashboardPage() {
                   </p>
                   <p className="text-sm text-[#7a8a6a]">{profile?.email}</p>
                   <div className="mt-1 flex items-center gap-2 flex-wrap">
-
                     {/* Approved by another admin */}
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold
-                          ${profile?.isApproved
-                          ? "bg-[#d4e6c3] text-[#4a7c59]"
-                          : "bg-amber-100 text-amber-700"
-                        }`}
+                          ${
+                            profile?.isApproved
+                              ? "bg-[#d4e6c3] text-[#4a7c59]"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
                     >
                       {profile?.isApproved
                         ? "✓ Approved"
@@ -302,9 +316,10 @@ export default function AdminDashboardPage() {
                     {/* Account active status */}
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold
-                        ${profile?.isActive
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-500"
+                        ${
+                          profile?.isActive
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-100 text-gray-500"
                         }`}
                     >
                       {profile?.isActive ? "● Active" : "● Inactive"}
@@ -340,13 +355,13 @@ export default function AdminDashboardPage() {
                       <p className="text-sm font-semibold text-[#1a1f16]">
                         {profile?.createdAt
                           ? new Date(profile.createdAt).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )
+                              "en-GB",
+                              {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              },
+                            )
                           : "—"}
                       </p>
                     </div>
