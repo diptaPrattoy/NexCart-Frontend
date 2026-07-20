@@ -8,8 +8,10 @@ import {
   Package,
   CheckCircle,
   Bike,
-  RefreshCw, Filter,
-  Clock, XCircle,
+  RefreshCw,
+  Filter,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import Pusher from "pusher-js";
 import { toast } from "react-toastify";
@@ -60,8 +62,14 @@ const PAYMENT_STYLES: Record<string, string> = {
 };
 
 const ALL_STATUSES = [
-  "all", "pending", "accepted", "partial",
-  "rider_assigned", "processing", "delivered", "cancelled",
+  "all",
+  "pending",
+  "accepted",
+  "partial",
+  "rider_assigned",
+  "processing",
+  "delivered",
+  "cancelled",
 ];
 
 const FILTER_LABELS: Record<string, string> = {
@@ -85,9 +93,9 @@ export default function OrdersPage() {
   );
   const [activeFilter, setActiveFilter] = useState("all");
 
-   // stores values / references without re - rendering the component.
-  const fetchOrdersRef = useRef<() => Promise<void>>(async () => { });
-  const fetchAvailableRidersRef = useRef<() => Promise<void>>(async () => { });
+  // stores values / references without re - rendering the component.
+  const fetchOrdersRef = useRef<() => Promise<void>>(async () => {});
+  const fetchAvailableRidersRef = useRef<() => Promise<void>>(async () => {});
 
   const fetchOrders = useCallback(async () => {
     // reuse same function instead of rebuilding every render
@@ -171,38 +179,21 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => {
+    const pusher = new Pusher("8ce8e1219e4b306f5eba", {
+      cluster: "ap2",
+    });
 
-    const pusher = new Pusher(
-      "8ce8e1219e4b306f5eba",
-      {
-        cluster: "ap2",
-      }
-    );
-
-    const channel =
-      pusher.subscribe(
-        "admin-channel"
-      );
+    const channel = pusher.subscribe("admin-channel");
 
     // NEW ORDER
-    channel.bind(
-      "admin-new-order",
-      (data: any) => {
-        toast.success(
-          `📦 ${data.message}`
-        );
-      }
-    );
+    channel.bind("admin-new-order", (data: any) => {
+      toast.success(`📦 ${data.message}`);
+    });
 
     // ORDER DELIVERED
-    channel.bind(
-      "order-delivered",
-      (data: any) => {
-        toast.success(
-          `${data.message}`
-        );
-      }
-    );
+    channel.bind("order-delivered", (data: any) => {
+      toast.success(`${data.message}`);
+    });
 
     return () => {
       channel.unbind_all();
@@ -238,6 +229,7 @@ export default function OrdersPage() {
   };
 
   // Stats
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
   const readyCount = orders.filter(
     (o) => ["accepted", "partial"].includes(o.status) && !o.rider,
   ).length;
@@ -267,7 +259,10 @@ export default function OrdersPage() {
           </p>
         </div>
         <button
-          onClick={() => { fetchOrders(); fetchAvailableRiders(); }}
+          onClick={() => {
+            fetchOrders();
+            fetchAvailableRiders();
+          }}
           className="flex items-center gap-2 rounded-xl border border-[#e0d9cc] bg-white px-4 py-2.5 text-sm font-semibold text-[#4a7c59] transition hover:bg-[#f0ebe0]"
         >
           <RefreshCw size={15} />
@@ -278,14 +273,44 @@ export default function OrdersPage() {
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
         {[
-          { label: "New Orders", value: pendingCount, icon: Clock, color: "bg-yellow-400" },
-          { label: "Ready to Assign", value: readyCount, icon: Package, color: "bg-teal-500" },
-          { label: "Rider Assigned", value: assignedCount, icon: Bike, color: "bg-blue-500" },
-          { label: "Delivered", value: deliveredCount, icon: CheckCircle, color: "bg-green-500" },
-          { label: "Cancelled", value: cancelledCount, icon: XCircle, color: "bg-red-400" },
+          {
+            label: "New Orders",
+            value: pendingCount,
+            icon: Clock,
+            color: "bg-yellow-400",
+          },
+          {
+            label: "Ready to Assign",
+            value: readyCount,
+            icon: Package,
+            color: "bg-teal-500",
+          },
+          {
+            label: "Rider Assigned",
+            value: assignedCount,
+            icon: Bike,
+            color: "bg-blue-500",
+          },
+          {
+            label: "Delivered",
+            value: deliveredCount,
+            icon: CheckCircle,
+            color: "bg-green-500",
+          },
+          {
+            label: "Cancelled",
+            value: cancelledCount,
+            icon: XCircle,
+            color: "bg-red-400",
+          },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-[#e0d9cc] bg-white p-5 shadow-sm">
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
+          <div
+            key={label}
+            className="rounded-2xl border border-[#e0d9cc] bg-white p-5 shadow-sm"
+          >
+            <div
+              className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${color}`}
+            >
               <Icon size={18} className="text-white" />
             </div>
             <p className="text-sm text-[#7a8a6a]">{label}</p>
@@ -301,22 +326,29 @@ export default function OrdersPage() {
           Filter:
         </span>
         {ALL_STATUSES.map((status) => {
-          const count = status === "all"
-            ? orders.length
-            : orders.filter((o) => o.status === status).length;
+          const count =
+            status === "all"
+              ? orders.length
+              : orders.filter((o) => o.status === status).length;
           const isActive = activeFilter === status;
           return (
             <button
               key={status}
               onClick={() => setActiveFilter(status)}
-              className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition ${isActive
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                isActive
                   ? "bg-[#4a7c59] text-white shadow"
                   : "bg-[#f0ebe0] text-[#4a7c59] hover:bg-[#e0d9cc]"
-                }`}
+              }`}
             >
               {FILTER_LABELS[status]}
-              <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${isActive ? "bg-white/20 text-white" : "bg-[#4a7c59]/10 text-[#4a7c59]"
-                }`}>
+              <span
+                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-black ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-[#4a7c59]/10 text-[#4a7c59]"
+                }`}
+              >
                 {count}
               </span>
             </button>
@@ -388,32 +420,44 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                {/* Customer */}
-                <div className="rounded-xl bg-[#faf8f3] p-4">
-                  <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">Customer</p>
-                  <p className="font-semibold text-[#1a1f16]">{order.customer?.name ?? "—"}</p>
-                  <p className="text-xs text-[#7a8a6a]">{order.customer?.email ?? "—"}</p>
-                </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* Customer */}
+                  <div className="rounded-xl bg-[#faf8f3] p-4">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">
+                      Customer
+                    </p>
+                    <p className="font-semibold text-[#1a1f16]">
+                      {order.customer?.name ?? "—"}
+                    </p>
+                    <p className="text-xs text-[#7a8a6a]">
+                      {order.customer?.email ?? "—"}
+                    </p>
+                  </div>
 
-                {/* Items */}
-                <div className="rounded-xl bg-[#faf8f3] p-4">
-                  <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">Items</p>
-                  {order.orderItems?.map((item) => (
-                    <div key={item.id} className="mb-2">
-                      <p className="text-sm text-[#1a1f16]">
-                        {item.product?.productName} × {item.quantity}
-                        <span className="ml-2 text-xs text-[#7a8a6a]">৳{item.product?.price}</span>
-                      </p>
-                      {item.seller?.shop?.shopName && (
-                        <p className="text-xs text-[#7a8a6a]">{item.seller.shop.shopName}</p>
-                      )}
-                    </div>
-                  ))}
-                  <p className="mt-2 text-xs font-bold text-[#4a7c59]">
-                    Total: ৳{Number(order.totalAmount).toLocaleString()}
-                  </p>
-                </div>
+                  {/* Items */}
+                  <div className="rounded-xl bg-[#faf8f3] p-4">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#7a8a6a]">
+                      Items
+                    </p>
+                    {order.orderItems?.map((item) => (
+                      <div key={item.id} className="mb-2">
+                        <p className="text-sm text-[#1a1f16]">
+                          {item.product?.productName} × {item.quantity}
+                          <span className="ml-2 text-xs text-[#7a8a6a]">
+                            ৳{item.product?.price}
+                          </span>
+                        </p>
+                        {item.seller?.shop?.shopName && (
+                          <p className="text-xs text-[#7a8a6a]">
+                            {item.seller.shop.shopName}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                    <p className="mt-2 text-xs font-bold text-[#4a7c59]">
+                      Total: ৳{Number(order.totalAmount).toLocaleString()}
+                    </p>
+                  </div>
 
                   {/* Rider */}
                   <div className="rounded-xl bg-[#faf8f3] p-4">
