@@ -1,7 +1,6 @@
 "use client";
 
 import { Plus, Upload, Package } from "lucide-react";
-
 import ProductCard from "./ProductCard";
 
 const PRODUCT_CATEGORIES = [
@@ -18,26 +17,46 @@ const inputCls =
 const labelCls =
   "block text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5";
 
+type ProductForm = {
+  productName: string;
+  category: string;
+  description: string;
+  price: string;
+  quantity: string;
+};
+
+type Product = {
+  id: number;
+  productName: string;
+  category: string;
+  description?: string | null;
+  price: number;
+  quantity: number;
+  productImage?: string | null;
+};
+
 type Props = {
-  products: any[];
+  products: Product[];
   productsLoading: boolean;
 
-  form: any;
-  setForm: any;
+  form: ProductForm;
+  setForm: React.Dispatch<React.SetStateAction<ProductForm>>;
 
-  handleChange: any;
-  handleSubmitProduct: any;
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
+
+  handleSubmitProduct: (e: React.FormEvent<HTMLFormElement>) => void;
 
   productImage: File | null;
-  setProductImage: any;
+  setProductImage: React.Dispatch<React.SetStateAction<File | null>>;
 
   submitting: boolean;
 
   editingProductId: number | null;
   resetForm: () => void;
 
-  handleEdit: any;
-  handleDelete: any;
+  handleEdit: (product: Product) => void;
 };
 
 export default function ProductsSection({
@@ -53,10 +72,10 @@ export default function ProductsSection({
   editingProductId,
   resetForm,
   handleEdit,
-  handleDelete,
 }: Props) {
   return (
-    <div className="grid grid-cols-[340px_1fr] xl:grid-cols-[340px_1fr] gap-5 items-start">
+    <div className="grid grid-cols-1 gap-5 items-start xl:grid-cols-[340px_minmax(0,1fr)]">
+      {" "}
       {/* Form card */}
       <div className="bg-white border border-black/[0.07] rounded-2xl p-6">
         <h2 className="flex items-center gap-2 text-[17px] font-bold text-gray-900 mb-5">
@@ -75,6 +94,7 @@ export default function ProductsSection({
               placeholder="e.g. Wireless Headphones"
               value={form.productName}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -86,17 +106,18 @@ export default function ProductsSection({
               name="category"
               value={form.category}
               onChange={(e) =>
-                setForm((prev: any) => ({
+                setForm((prev) => ({
                   ...prev,
                   category: e.target.value,
                 }))
               }
+              required
             >
               <option value="">Select Category</option>
 
-              {PRODUCT_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {PRODUCT_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
                 </option>
               ))}
             </select>
@@ -114,9 +135,9 @@ export default function ProductsSection({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Price (৳)</label>
+              <label className={labelCls}>Price ৳</label>
 
               <input
                 className={inputCls}
@@ -126,6 +147,7 @@ export default function ProductsSection({
                 placeholder="0.00"
                 value={form.price}
                 onChange={handleChange}
+                required
               />
             </div>
 
@@ -140,6 +162,7 @@ export default function ProductsSection({
                 placeholder="0"
                 value={form.quantity}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -150,18 +173,19 @@ export default function ProductsSection({
               className="text-gray-400 group-hover:text-green-600 transition"
             />
 
-            <span className="text-[13px] font-medium text-gray-500">
+            <span className="text-[13px] font-medium text-gray-500 break-all">
               {productImage ? productImage.name : "Upload Product Image"}
             </span>
 
             <span className="text-[11px] text-gray-400">
-              PNG, JPG, WEBP accepted
+              PNG, JPG, JPEG, WEBP accepted
             </span>
 
             <input
               hidden
               type="file"
-              accept="image/*"
+              name="productImage"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               onChange={(e) => setProductImage(e.target.files?.[0] || null)}
             />
           </label>
@@ -189,15 +213,21 @@ export default function ProductsSection({
           )}
         </form>
       </div>
-
       {/* Product list */}
       <div className="bg-white border border-black/[0.07] rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[18px] font-bold text-gray-900 tracking-tight">
-            My Products
-          </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div>
+            <h2 className="text-[18px] font-bold text-gray-900 tracking-tight">
+              My Products
+            </h2>
 
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
+            <p className="text-xs text-gray-400 mt-1">
+              Products can be edited, but delete is disabled to protect order
+              history.
+            </p>
+          </div>
+
+          <span className="w-fit text-xs font-bold px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
             {products.length} items
           </span>
         </div>
@@ -231,7 +261,6 @@ export default function ProductsSection({
                 key={product.id}
                 product={product}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
               />
             ))}
           </div>

@@ -118,7 +118,14 @@ export const emptyProfileForm: SellerProfileForm = {
   phone: "",
   nidNumber: "",
 };
-
+function decodeJwt(token: string) {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
 const sectionTitles: Record<string, string> = {
   dashboard: "Dashboard",
   products: "Manage Products",
@@ -264,15 +271,60 @@ export default function SellerDashboardPage() {
     }
   };
 
+  // const loadSellerOrders = async (sellerId: number) => {
+  //   try {
+  //     setOrdersLoading(true);
+
+  //     const response = await axios.get(
+  //       `${API_BASE_URL}/seller/${sellerId}/orders`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${Cookies.get("token")}`,
+  //         },
+  //       },
+  //     );
+
+  //     const orderList = Array.isArray(response.data)
+  //       ? response.data
+  //       : response.data?.data || [];
+
+  //     setOrders(orderList);
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error("Failed to load orders");
+  //   } finally {
+  //     setOrdersLoading(false);
+  //   }
+  // };
+
+  // const handleLogout = () => {
+  //   Cookies.remove("token");
+  //   Cookies.remove("seller");
+
+  //   toast.success("Logged out successfully");
+
+  //   setTimeout(() => {
+  //     window.location.href = "/login/seller";
+  //   }, 700);
+  // };
   const loadSellerOrders = async (sellerId: number) => {
     try {
       setOrdersLoading(true);
+
+      const token = Cookies.get("token");
+
+      console.log("SELLER ORDER DEBUG:", {
+        apiUrl: `${API_BASE_URL}/seller/${sellerId}/orders`,
+        tokenExists: Boolean(token),
+        tokenPayload: token ? decodeJwt(token) : null,
+        sellerIdFromCookie: sellerId,
+      });
 
       const response = await axios.get(
         `${API_BASE_URL}/seller/${sellerId}/orders`,
         {
           headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -283,16 +335,33 @@ export default function SellerDashboardPage() {
 
       setOrders(orderList);
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to load orders");
+      if (axios.isAxiosError(error)) {
+        console.error("LOAD SELLER ORDERS FAILED:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          url: `${API_BASE_URL}/seller/${sellerId}/orders`,
+          tokenExists: Boolean(Cookies.get("token")),
+          tokenPayload: Cookies.get("token")
+            ? decodeJwt(Cookies.get("token") as string)
+            : null,
+        });
+
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to load orders. Please login again.",
+        );
+      } else {
+        console.error(error);
+        toast.error("Failed to load orders");
+      }
     } finally {
       setOrdersLoading(false);
     }
   };
-
   const handleLogout = () => {
-    Cookies.remove("token");
-    Cookies.remove("seller");
+    Cookies.remove("token", { path: "/" });
+    Cookies.remove("role", { path: "/" });
+    Cookies.remove("seller", { path: "/" });
 
     toast.success("Logged out successfully");
 
@@ -395,7 +464,10 @@ export default function SellerDashboardPage() {
   const handleDelete = async (productId: number) => {
     const token = Cookies.get("token");
 
-    if (!token || !seller) return;
+    if (!token || !seller) {
+      toast.error("Session expired. Please login again.");
+      return;
+    }
 
     if (!confirm("Delete this product?")) return;
 
@@ -408,8 +480,22 @@ export default function SellerDashboardPage() {
 
       toast.success("Product deleted");
       loadSellerProducts(seller.id);
-    } catch {
-      toast.error("Failed to delete");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("DELETE PRODUCT FAILED:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          url: `${API_BASE_URL}/seller/products/${productId}`,
+        });
+
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to delete product. Check console.",
+        );
+      } else {
+        console.error(error);
+        toast.error("Failed to delete product");
+      }
     }
   };
 
@@ -635,7 +721,6 @@ export default function SellerDashboardPage() {
               handleChange={handleChange}
               handleSubmitProduct={handleSubmitProduct}
               handleEdit={handleEdit}
-              handleDelete={handleDelete}
               resetForm={resetForm}
             />
           )}

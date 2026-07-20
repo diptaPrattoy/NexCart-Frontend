@@ -81,12 +81,12 @@ export default function ProductCard({ product, onEdit, onDelete }: Props) {
             <Pencil size={12} /> Edit
           </button>
 
-          <button
+          {/* <button
             onClick={() => onDelete(product.id)}
             className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition"
           >
             <Trash2 size={12} /> Delete
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

@@ -76,7 +76,7 @@ export default async function ProductDetailsPage({
     <div className="min-h-screen bg-slate-50 py-8 md:py-14">
       <div className="max-w-6xl mx-auto px-4">
         <Link
-          href="/"
+          href="/products"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-semibold text-sm mb-6 transition-colors"
         >
           <ArrowLeft size={16} />
