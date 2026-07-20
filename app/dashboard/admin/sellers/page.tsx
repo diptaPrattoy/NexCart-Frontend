@@ -48,7 +48,7 @@ export default function SellersPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchName, setSearchName] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // ← add this
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchSellers = async () => {
     try {
@@ -77,7 +77,6 @@ export default function SellersPage() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Delete this seller?")) return;
     try {
       setDeletingId(id);
       await axios.delete(`https://nexcart-backend-o86x.onrender.com/admin/sellers/${id}`, authHeader());
