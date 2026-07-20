@@ -43,7 +43,7 @@ export default function SellersPage() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [searchName, setSearchName] = useState("");
-  const [searchTerm, setSearchTerm] = useState(""); // ← add this
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchSellers = async () => {
     try {
@@ -72,7 +72,6 @@ export default function SellersPage() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Delete this seller?")) return;
     try {
       setDeletingId(id);
       await axios.delete(`http://localhost:3000/seller/${id}`, authHeader());

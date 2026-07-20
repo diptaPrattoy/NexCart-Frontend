@@ -1,7 +1,3 @@
-//  SSR PAGE — no "use client" directive
-// Data is fetched on the SERVER before the page renders
-// This satisfies: SSR + Dynamic Route [id] requirements
-
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
