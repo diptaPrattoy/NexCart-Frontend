@@ -1,13 +1,26 @@
-import ProductFilterBar from "@/components/ProductFilterBar";
-import React from "react";
-import ProductGrid from "@/components/ProductGrid";
-const page = () => {
-  return (
-    <div>
+import ProductGrid, { PriceFilter } from "@/components/ProductGrid";
 
-      <ProductGrid />
-    </div>
-  );
+type ProductsPageProps = {
+  searchParams?: Promise<{
+    category?: string;
+    price?: PriceFilter;
+  }>;
 };
 
-export default page;
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  const params = await searchParams;
+
+  const selectedCategory = params?.category || "all";
+
+  const priceFilter: PriceFilter =
+    params?.price === "lowToHigh" || params?.price === "highToLow"
+      ? params.price
+      : "default";
+
+  return (
+    <ProductGrid
+      selectedCategory={selectedCategory}
+      priceFilter={priceFilter}
+    />
+  );
+}

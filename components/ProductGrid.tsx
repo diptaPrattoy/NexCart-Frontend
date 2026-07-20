@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+import { Suspense } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -173,12 +173,14 @@ export default async function ProductGrid({
           </Link>
         </Box>
 
-        <ProductFilterBar
-          categories={PRODUCT_CATEGORIES}
-          selectedCategory={selectedCategory}
-          priceFilter={priceFilter}
-        />
-
+        <Suspense fallback={null}>
+          <ProductFilterBar
+            categories={PRODUCT_CATEGORIES}
+            selectedCategory={selectedCategory}
+            priceFilter={priceFilter}
+          />
+        </Suspense>
+        
         {products.length > 0 && (
           <Typography
             sx={{
