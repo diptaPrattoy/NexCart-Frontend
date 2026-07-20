@@ -17,10 +17,9 @@ type Product = {
 type Props = {
   product: Product;
   onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
 };
 
-export default function ProductCard({ product, onEdit, onDelete }: Props) {
+export default function ProductCard({ product, onEdit }: Props) {
   const imageUrl = product.productImage
     ? `${API_BASE_URL}/uploads/products/${product.productImage}`
     : "";
